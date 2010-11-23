@@ -1,47 +1,48 @@
-"""Algorithms to reorder triangle list order and vertex order aiming to
+/*
+Algorithms to reorder triangle list order and vertex order aiming to
 minimize vertex cache misses.
 
 This is effectively an implementation of
 'Linear-Speed Vertex Cache Optimisation' by Tom Forsyth, 28th September 2006
 http://home.comcast.net/~tom_forsyth/papers/fast_vert_cache_opt.html
-"""
+*/
 
-# ***** BEGIN LICENSE BLOCK *****
-#
-# Copyright (c) 2007-2010, Python File Format Interface
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#    * Redistributions of source code must retain the above copyright
-#      notice, this list of conditions and the following disclaimer.
-#
-#    * Redistributions in binary form must reproduce the above
-#      copyright notice, this list of conditions and the following
-#      disclaimer in the documentation and/or other materials provided
-#      with the distribution.
-#
-#    * Neither the name of the Python File Format Interface
-#      project nor the names of its contributors may be used to endorse
-#      or promote products derived from this software without specific
-#      prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
-# ***** END LICENSE BLOCK *****
+// ***** BEGIN LICENSE BLOCK *****
+//
+// Copyright (c) 2007-2010, Python File Format Interface
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+//
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above
+//      copyright notice, this list of conditions and the following
+//      disclaimer in the documentation and/or other materials provided
+//      with the distribution.
+//
+//    * Neither the name of the Python File Format Interface
+//      project nor the names of its contributors may be used to endorse
+//      or promote products derived from this software without specific
+//      prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+// ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// ***** END LICENSE BLOCK *****
 
 from __future__ import division
 
@@ -51,8 +52,8 @@ from pyffi.utils.tristrip import OrientedStrip
 
 class VertexScore:
     """Vertex score calculation."""
-    # constants used for scoring algorithm
-    CACHE_SIZE = 32 # higher values yield virtually no improvement
+    // constants used for scoring algorithm
+    CACHE_SIZE = 32 // higher values yield virtually no improvement
     """The size of the modeled cache."""
 
     CACHE_DECAY_POWER = 1.5
@@ -60,12 +61,12 @@ class VertexScore:
     VALENCE_BOOST_SCALE = 2.0
     VALENCE_BOOST_POWER = 0.5
 
-    # implementation note: limitation of 255 triangles per vertex
-    # this is unlikely to be exceeded...
+    // implementation note: limitation of 255 triangles per vertex
+    // this is unlikely to be exceeded...
     MAX_TRIANGLES_PER_VERTEX = 255
 
     def __init__(self):
-        # calculation of score is precalculated for speed
+        // calculation of score is precalculated for speed
         self.precalculate()
 
     def precalculate(self):
@@ -147,18 +148,18 @@ class VertexScore:
           num triangles = 3 : 2.053
         """
         if not vertex_info.triangle_indices:
-            # no triangle needs this vertex
+            // no triangle needs this vertex
             vertex_info.score = -1
             return
 
         if vertex_info.cache_position < 0:
-            # not in cache
+            // not in cache
             vertex_info.score = 0
         else:
-            # use cache score lookup table
+            // use cache score lookup table
             vertex_info.score = self.CACHE_SCORE[vertex_info.cache_position]
 
-        # bonus points for having low number of triangles still in use
+        // bonus points for having low number of triangles still in use
         vertex_info.score += self.VALENCE_SCORE[
             len(vertex_info.triangle_indices)]
 
@@ -169,7 +170,7 @@ class VertexInfo:
                  triangle_indices=None):
         self.cache_position = cache_position
         self.score = score
-        # only triangles that have *not* yet been drawn are in this list
+        // only triangles that have *not* yet been drawn are in this list
         self.triangle_indices = ([] if triangle_indices is None
                                  else triangle_indices)
 
@@ -184,7 +185,7 @@ class Mesh:
     are used by which vertex, and vertex cache positions.
     """
 
-    _DEBUG = False # to enable debugging of the algorithm
+    _DEBUG = False // to enable debugging of the algorithm
 
     def __init__(self, triangles, vertex_score=None):
         """Initialize mesh from given set of triangles.
@@ -213,30 +214,30 @@ class Mesh:
         >>> [triangle_info.vertex_indices for triangle_info in m.triangle_infos]
         [(0, 1, 2), (1, 3, 2)]
         """
-        # initialize vertex and triangle information, and vertex cache
+        // initialize vertex and triangle information, and vertex cache
         self.vertex_infos = []
         self.triangle_infos = []
-        # add all vertices
+        // add all vertices
         if triangles:
             num_vertices = max(max(verts) for verts in triangles) + 1
         else:
             num_vertices = 0
-        # scoring algorithm
+        // scoring algorithm
         if vertex_score is None:
             self.vertex_score = VertexScore()
         else:
             self.vertex_score = vertex_score
         self.vertex_infos = [VertexInfo() for i in xrange(num_vertices)]
-        # add all triangles
+        // add all triangles
         for triangle_index, verts in enumerate(get_unique_triangles(triangles)):
             self.triangle_infos.append(TriangleInfo(vertex_indices=verts))
             for vertex in verts:
                 self.vertex_infos[vertex].triangle_indices.append(
                     triangle_index)
-        # calculate score of all vertices
+        // calculate score of all vertices
         for vertex_info in self.vertex_infos:
             self.vertex_score.update_score(vertex_info)
-        # calculate score of all triangles
+        // calculate score of all triangles
         for triangle_info in self.triangle_infos:
             triangle_info.score = sum(
                 self.vertex_infos[vertex].score
@@ -251,15 +252,15 @@ class Mesh:
         """
         triangles = []
         cache = collections.deque()
-        # set of vertex indices whose scores were updated in the previous run
+        // set of vertex indices whose scores were updated in the previous run
         updated_vertices = set()
-        # set of triangle indices whose scores were updated in the previous run
+        // set of triangle indices whose scores were updated in the previous run
         updated_triangles = set()
         while (updated_triangles
                or any(triangle_info for triangle_info in self.triangle_infos)):
-            # pick triangle with highest score
+            // pick triangle with highest score
             if self._DEBUG or not updated_triangles:
-                # very slow but correct global maximum
+                // very slow but correct global maximum
                 best_triangle_index, best_triangle_info = max(
                     (triangle
                      for triangle in enumerate(self.triangle_infos)
@@ -268,10 +269,10 @@ class Mesh:
             if updated_triangles:
                 if self._DEBUG:
                     globally_optimal_score = best_triangle_info.score
-                # if scores of triangles were updated in the previous run
-                # then restrict the search to those
-                # this is suboptimal, but the difference is usually very small
-                # and it is *much* faster (as noted by Forsyth)
+                // if scores of triangles were updated in the previous run
+                // then restrict the search to those
+                // this is suboptimal, but the difference is usually very small
+                // and it is *much* faster (as noted by Forsyth)
                 best_triangle_index = max(
                     updated_triangles,
                     key=lambda triangle_index:
@@ -282,45 +283,45 @@ class Mesh:
                         print(globally_optimal_score,
                               globally_optimal_score - best_triangle_info.score,
                               len(updated_triangles))
-            # mark as added
+            // mark as added
             self.triangle_infos[best_triangle_index] = None
-            # append to ordered list of triangles
+            // append to ordered list of triangles
             triangles.append(best_triangle_info.vertex_indices)
-            # clean lists of vertices and triangles whose score we will update
+            // clean lists of vertices and triangles whose score we will update
             updated_vertices = set()
             updated_triangles = set()
-            # for each vertex in the just added triangle
+            // for each vertex in the just added triangle
             for vertex in best_triangle_info.vertex_indices:
                 vertex_info = self.vertex_infos[vertex]
-                # remove triangle from the triangle list of the vertex
+                // remove triangle from the triangle list of the vertex
                 vertex_info.triangle_indices.remove(best_triangle_index)
-                # must update its score
+                // must update its score
                 updated_vertices.add(vertex)
                 updated_triangles.update(vertex_info.triangle_indices)
-            # add each vertex to cache (score is updated later)
+            // add each vertex to cache (score is updated later)
             for vertex in best_triangle_info.vertex_indices:
                 if vertex not in cache:
                     cache.appendleft(vertex)
                     if len(cache) > self.vertex_score.CACHE_SIZE:
-                        # cache overflow!
-                        # remove vertex from cache
+                        // cache overflow!
+                        // remove vertex from cache
                         removed_vertex = cache.pop()
                         removed_vertex_info = self.vertex_infos[removed_vertex]
-                        # update its cache position
+                        // update its cache position
                         removed_vertex_info.cache_position = -1
-                        # must update its score
+                        // must update its score
                         updated_vertices.add(removed_vertex)
                         updated_triangles.update(removed_vertex_info.triangle_indices)
-            # for each vertex in the cache (this includes those from the
-            # just added triangle)
+            // for each vertex in the cache (this includes those from the
+            // just added triangle)
             for i, vertex in enumerate(cache):
                 vertex_info = self.vertex_infos[vertex]
-                # update cache positions
+                // update cache positions
                 vertex_info.cache_position = i
-                # must update its score
+                // must update its score
                 updated_vertices.add(vertex)
                 updated_triangles.update(vertex_info.triangle_indices)
-            # update scores
+            // update scores
             for vertex in updated_vertices:
                 self.vertex_score.update_score(self.vertex_infos[vertex])
             for triangle in updated_triangles:
@@ -328,7 +329,7 @@ class Mesh:
                 triangle_info.score = sum(
                     self.vertex_infos[vertex].score
                     for vertex in triangle_info.vertex_indices)
-        # return result
+        // return result
         return triangles
 
 def get_cache_optimized_triangles(triangles):
@@ -352,7 +353,7 @@ def get_unique_triangles(triangles):
     _added_triangles = set()
     for v0, v1, v2 in triangles:
         if v0 == v1 or v1 == v2 or v2 == v0:
-            # skip degenerate triangles
+            // skip degenerate triangles
             continue
         if v0 < v1 and v0 < v2:
             verts = (v0, v1, v2)
@@ -381,21 +382,21 @@ def stable_stripify(triangles, stitchstrips=False):
     >>> stable_stripify([(0, 1, 2), (0, 3, 1), (0, 4, 3), (3, 5, 1), (6, 3, 4)])
     [[2, 0, 1, 3], [0, 4, 3], [3, 5, 1], [6, 3, 4]]
     """
-    # all orientation preserving triangle permutations
+    // all orientation preserving triangle permutations
     indices = ((0, 1, 2), (1, 2, 0), (2, 0, 1))
-    # list of all strips so far
+    // list of all strips so far
     strips = []
-    # current strip that is being built
+    // current strip that is being built
     strip = []
-    # add a triangle at a time
+    // add a triangle at a time
     for tri in triangles:
         if not strip:
-            # empty strip
+            // empty strip
             strip.extend(tri)
         elif len(strip) == 3:
-            # strip with single triangle
-            # see if we can append a vertex
-            # we can rearrange the original strip as well
+            // strip with single triangle
+            // see if we can append a vertex
+            // we can rearrange the original strip as well
             added = False
             for v0, v1, v2 in indices:
                 for ov0, ov1, ov2 in indices:
@@ -404,16 +405,16 @@ def stable_stripify(triangles, stitchstrips=False):
                         added = True
                         break
                 if added:
-                    # triangle added: break loop
+                    // triangle added: break loop
                     break
             if added:
-                # triangle added: process next triangle
+                // triangle added: process next triangle
                 continue
-            # start new strip
+            // start new strip
             strips.append(strip)
             strip = list(tri)
         else:
-            # strip with multiple triangles
+            // strip with multiple triangles
             added = False
             for ov0, ov1, ov2 in indices:
                 if len(strip) & 1:
@@ -427,12 +428,12 @@ def stable_stripify(triangles, stitchstrips=False):
                         added = True
                         break
             if added:
-                # triangle added: process next triangle
+                // triangle added: process next triangle
                 continue
-            # start new strip
+            // start new strip
             strips.append(strip)
             strip = list(tri)
-    # append last strip
+    // append last strip
     strips.append(strip)
     if not stitchstrips or not strips:
         return strips
@@ -479,11 +480,11 @@ def average_transform_to_vertex_ratio(strips, cache_size=16):
     http://castano.ludicon.com/blog/2009/01/29/acmr/
     """
     cache = collections.deque(maxlen=cache_size)
-    # get number of vertices
+    // get number of vertices
     vertices = set([])
     for strip in strips:
         vertices.update(strip)
-    # get number of cache misses (each miss needs a transform)
+    // get number of cache misses (each miss needs a transform)
     num_misses = 0
     for strip in strips:
         for vertex in strip:
@@ -492,11 +493,11 @@ def average_transform_to_vertex_ratio(strips, cache_size=16):
             else:
                 cache.appendleft(vertex)
                 num_misses += 1
-    # return result
+    // return result
     if vertices:
         return num_misses / float(len(vertices))
     else:
-        # no vertices...
+        // no vertices...
         return 1
 
 if __name__=='__main__':
