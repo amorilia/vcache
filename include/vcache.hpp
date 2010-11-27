@@ -45,6 +45,7 @@ http://home.comcast.net/~tom_forsyth/papers/fast_vert_cache_opt.html
 // ***** END LICENSE BLOCK *****
 
 #include <cmath> // std::pow
+#include <stdexcept> // std::runtime_error
 #include <vector> // std::vector
 
 #ifndef VCACHE_CACHE_SIZE
@@ -53,10 +54,10 @@ http://home.comcast.net/~tom_forsyth/papers/fast_vert_cache_opt.html
 #define VCACHE_CACHE_SIZE 32
 #endif
 
-#ifndef VCACHE_MAX_VALENCE
+#ifndef VCACHE_VALENCE_SIZE
 // Limitation of 255 triangles per vertex, which is unlikely to be
 // exceeded.
-#define VCACHE_MAX_VALENCE 256
+#define VCACHE_VALENCE_SIZE 256
 #endif
 
 #ifndef VCACHE_PRECISION
@@ -68,7 +69,7 @@ class VertexScore
 {
 private:
     int CACHE_SCORE[VCACHE_CACHE_SIZE];
-    int VALENCE_SCORE[VCACHE_MAX_VALENCE];
+    int VALENCE_SCORE[VCACHE_VALENCE_SIZE];
 
 public:
     VertexScore(
@@ -89,7 +90,7 @@ public:
                         cache_decay_power);
             };
         };
-        for (int valence = 0; valence < VCACHE_MAX_VALENCE; valence++) {
+        for (int valence = 0; valence < VCACHE_VALENCE_SIZE; valence++) {
             if (valence == 0) {
                 VALENCE_SCORE[valence] = 0;
             } else {
@@ -117,18 +118,26 @@ public:
 
     */
     int get(int cache_position, int valence) {
-        if (valence <= 0) {
+        // validate arguments
+        if (cache_position >= VCACHE_CACHE_SIZE) {
+            throw std::runtime_error("cache position exceeds cache size");
+        };
+        if (valence < 0) {
+            throw std::runtime_error("negative valence");
+        };
+        // calculate score
+        if (valence == 0) {
             // no triangle needs this vertex
             return -VCACHE_PRECISION;
         } else {
-            if ((cache_position < 0) || (cache_position >= VCACHE_CACHE_SIZE)) {
+            if (cache_position < 0) {
                 // not in cache, so only valence score
                 return VALENCE_SCORE[valence];
-            } else if (valence >= VCACHE_MAX_VALENCE) {
-                // if vertex has an insane number of triangles then
-                // its valence score is approximately zero anyway, so
-                // only cache score (note that this will probably NEVER happen)
-                return CACHE_SCORE[cache_position];
+            } else if (valence >= VCACHE_VALENCE_SIZE) {
+            // if vertex has an insane number of triangles then
+            // its valence score is approximately zero anyway, so
+            // only cache score (note that this will probably NEVER happen)
+            return CACHE_SCORE[cache_position];
             } else {
                 // in cache, and has triangles, so return both scores
                 return CACHE_SCORE[cache_position] + VALENCE_SCORE[valence];

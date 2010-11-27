@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(vertex_score_test)
     valence = 3;
     BOOST_CHECK_EQUAL(vertex_score.get(cache_position, valence), 2053);
     // corner cases: insane valence value
-    valence = VCACHE_MAX_VALENCE + 10;
+    valence = VCACHE_VALENCE_SIZE;
     cache_position = 0;
     BOOST_CHECK_EQUAL(vertex_score.get(cache_position, valence), 750);
     cache_position = 1;
@@ -89,6 +89,30 @@ BOOST_AUTO_TEST_CASE(vertex_score_test)
     BOOST_CHECK_EQUAL(vertex_score.get(cache_position, valence), 949);
     cache_position = 5;
     BOOST_CHECK_EQUAL(vertex_score.get(cache_position, valence), 898);
+    // corner cases: negative valence value
+    valence = -1;
+    cache_position = 0;
+    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
+    cache_position = 1;
+    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
+    cache_position = 2;
+    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
+    cache_position = 3;
+    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
+    cache_position = 4;
+    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
+    cache_position = 5;
+    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
+    // corner cases: cache position exceeds modelled cache
+    cache_position = VCACHE_CACHE_SIZE;
+    valence = 0;
+    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
+    valence = 1;
+    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
+    valence = 2;
+    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
+    valence = 3;
+    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
