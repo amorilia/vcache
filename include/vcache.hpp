@@ -44,9 +44,16 @@ http://home.comcast.net/~tom_forsyth/papers/fast_vert_cache_opt.html
 //
 // ***** END LICENSE BLOCK *****
 
+#include <algorithm> // std::max_element
+#include <boost/foreach.hpp> // BOOST_FOREACH
 #include <cmath> // std::pow
-#include <stdexcept> // std::runtime_error
+#include <list> // std::list
 #include <vector> // std::vector
+#include <set> // std::set
+#include <stdexcept> // std::runtime_error
+
+// to enable debugging of the algorithm, define VCACHE_DEBUG
+//#define VCACHE_DEBUG
 
 #ifndef VCACHE_CACHE_SIZE
 // The size of the modeled cache. Values larger than 32 yield
@@ -117,7 +124,7 @@ public:
     and valence score is 2 * (num triangles ** (-0.5))
 
     */
-    int get(int cache_position, int valence) {
+    int get(int cache_position, int valence) const {
         // validate arguments
         if (cache_position >= VCACHE_CACHE_SIZE) {
             throw std::runtime_error("cache position exceeds cache size");
@@ -134,10 +141,10 @@ public:
                 // not in cache, so only valence score
                 return VALENCE_SCORE[valence];
             } else if (valence >= VCACHE_VALENCE_SIZE) {
-            // if vertex has an insane number of triangles then
-            // its valence score is approximately zero anyway, so
-            // only cache score (note that this will probably NEVER happen)
-            return CACHE_SCORE[cache_position];
+                // if vertex has an insane number of triangles then
+                // its valence score is approximately zero anyway, so
+                // only cache score (note that this will probably NEVER happen)
+                return CACHE_SCORE[cache_position];
             } else {
                 // in cache, and has triangles, so return both scores
                 return CACHE_SCORE[cache_position] + VALENCE_SCORE[valence];
@@ -153,83 +160,82 @@ public:
     int cache_position;
     int score;
     // only triangles that have *not* yet been drawn are in this list
-    std::vector<int> triangle_indices;
+    std::set<int> triangle_indices;
 
-    VertexInfo() : cache_position(-1), score(-1), triangle_indices() {};
+    VertexInfo() : cache_position(-1), score(-VCACHE_PRECISION), triangle_indices() {};
+};
+
+/* Stores information about a triangle. */
+class TriangleInfo
+{
+public:
+    int score;
+    std::list<int> vertex_indices;
+
+    TriangleInfo(std::list<int> const & vertex_indices)
+        : score(0), vertex_indices(vertex_indices) {
+        if (vertex_indices.size() != 3) {
+            throw std::runtime_error("triangle must have exactly three vertices");
+        };
+    };
+};
+
+/* Simple mesh implementation which keeps track of which triangles
+   are used by which vertex, and vertex cache positions.
+*/
+class Mesh
+{
+public:
+    std::vector<VertexInfo> vertex_infos;
+    std::vector<TriangleInfo> triangle_infos;
+    VertexScore vertex_score;
+
+    /* Initialize mesh from given set of triangles. */
+    Mesh(std::list<std::list<int> > const & triangles,
+         VertexScore const & vertex_score)
+        : vertex_infos(), triangle_infos(), vertex_score(vertex_score) {
+
+        if (triangles.empty()) {
+            // special case: no triangles, so nothing to do
+            return;
+        }
+        // add all vertices
+        int num_vertices = 0;
+        BOOST_FOREACH(std::list<int> const & verts, triangles) {
+            num_vertices =
+                std::max(
+                    num_vertices,
+                    *std::max_element(verts.begin(), verts.end()));
+        };
+        ++num_vertices;
+        vertex_infos = std::vector<VertexInfo>(num_vertices);
+        // add all unique triangles
+        int triangle_index = 0;
+        BOOST_FOREACH(std::list<int> const & verts, triangles) {
+            triangle_infos.push_back(TriangleInfo(verts));
+            BOOST_FOREACH(int vertex, verts) {
+                vertex_infos[vertex].triangle_indices.insert(triangle_index);
+            };
+            ++triangle_index;
+        };
+        // calculate score of all vertices
+        BOOST_FOREACH(VertexInfo & vertex_info, vertex_infos) {
+            vertex_info.score =
+                vertex_score.get(
+                    vertex_info.cache_position,
+                    vertex_info.triangle_indices.size());
+        };
+        // calculate score of all triangles
+        BOOST_FOREACH(TriangleInfo & triangle_info, triangle_infos) {
+            triangle_info.score = 0;
+            BOOST_FOREACH(int vertex, triangle_info.vertex_indices) {
+                triangle_info.score += vertex_infos[vertex].score;
+            };
+        };
+    };
 };
 
 /* TODO
-class TriangleInfo:
-    def __init__(self, score=0, vertex_indices=None):
-        self.score = score
-        self.vertex_indices = ([] if vertex_indices is None
-                               else vertex_indices)
-
-class Mesh:
-    /* Simple mesh implementation which keeps track of which triangles
-    are used by which vertex, and vertex cache positions.
-    */
-/* TODO
-
-    _DEBUG = False // to enable debugging of the algorithm
-
-    def __init__(self, triangles, vertex_score=None):
-        /* Initialize mesh from given set of triangles.
-
-        Empty mesh
-        ----------
-
-        >>> Mesh([]).triangle_infos
-        []
-
-        Single triangle mesh (with degenerate)
-        --------------------------------------
-
-        >>> m = Mesh([(0,1,2), (1,2,0)])
-        >>> [vertex_info.triangle_indices for vertex_info in m.vertex_infos]
-        [[0], [0], [0]]
-        >>> [triangle_info.vertex_indices for triangle_info in m.triangle_infos]
-        [(0, 1, 2)]
-
-        Double triangle mesh
-        --------------------
-
-        >>> m = Mesh([(0,1,2), (2,1,3)])
-        >>> [vertex_info.triangle_indices for vertex_info in m.vertex_infos]
-        [[0], [0, 1], [0, 1], [1]]
-        >>> [triangle_info.vertex_indices for triangle_info in m.triangle_infos]
-        [(0, 1, 2), (1, 3, 2)]
-        */
-/* TODO
-        // initialize vertex and triangle information, and vertex cache
-        self.vertex_infos = []
-        self.triangle_infos = []
-        // add all vertices
-        if triangles:
-            num_vertices = max(max(verts) for verts in triangles) + 1
-        else:
-            num_vertices = 0
-        // scoring algorithm
-        if vertex_score is None:
-            self.vertex_score = VertexScore()
-        else:
-            self.vertex_score = vertex_score
-        self.vertex_infos = [VertexInfo() for i in xrange(num_vertices)]
-        // add all triangles
-        for triangle_index, verts in enumerate(get_unique_triangles(triangles)):
-            self.triangle_infos.append(TriangleInfo(vertex_indices=verts))
-            for vertex in verts:
-                self.vertex_infos[vertex].triangle_indices.append(
-                    triangle_index)
-        // calculate score of all vertices
-        for vertex_info in self.vertex_infos:
-            self.vertex_score.update_score(vertex_info)
-        // calculate score of all triangles
-        for triangle_info in self.triangle_infos:
-            triangle_info.score = sum(
-                self.vertex_infos[vertex].score
-                for vertex in triangle_info.vertex_indices)
-
     def get_cache_optimized_triangles(self):
         /* Reorder triangles in a cache efficient way.
 
