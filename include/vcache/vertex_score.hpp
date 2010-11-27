@@ -40,35 +40,65 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "vcache/defines.hpp"
 
-/* Vertex score calculation. */
+//! Vertex score calculation, with customizable parameters.
 class VertexScore
 {
 private:
-    int CACHE_SCORE[VCACHE_CACHE_SIZE];
-    int VALENCE_SCORE[VCACHE_VALENCE_SIZE];
+    int CACHE_SCORE[VCACHE_CACHE_SIZE]; //!< Cache score lookup table.
+    int VALENCE_SCORE[VCACHE_VALENCE_SIZE]; //!< Valence score lookup table.
 
 public:
+    //! Initialize scoring algorithm with given parameters.
+    /*!
+
+      \param cache_decay_power Determines how fast cache score decays
+           as the cache position increases.
+
+      \param last_tri_score Cache score assigned to each of the first
+          three vertices in the cache. Should be less than 1 in order
+          to stimulate the algorithm to look ahead.
+
+      \param valence_boost_scale Weighs valence score relative to the
+          cache score.
+
+      \param valence_boost_power Determines how fast the valence score
+          decays as the valence increases.
+     */
     VertexScore(
         float cache_decay_power=1.5,
         float last_tri_score=0.75,
         float valence_boost_scale=2.0,
         float valence_boost_power=0.5);
 
-    /* Calculate score:
+    //! Calculate vertex score.
+    /*!
+      \param cache_position The position of the vertex in the cache. A
+          value -1 means that the vertex is not in the cache, 0 for
+          the first position, 1 for the second position, etc.
 
-    * -1 if vertex has no triangles
-    * cache score + valence score otherwise
+      \param valence The number of triangles which have this vertex
+          and that still have to be drawn.
 
-    where cache score is
+      \throws std::runtime_error When cache_position >=
+          VCACHE_CACHE_SIZE or valence < 0.
+      
+      The score is calculated as follows (assuming default parameter
+      values):
 
-    * 0 if vertex is not in cache
-    * 0.75 if vertex has been used very recently
-      (position 0, 1, or 2)
-    * (1 - (cache position - 3) / (32 - 3)) ** 1.5
-      otherwise
+      - -1 if vertex has no triangles
+      - cache score + valence score otherwise
 
-    and valence score is 2 * (num triangles ** (-0.5))
+      where cache score is
 
+      - 0 if vertex is not in cache
+      - 0.75 if vertex has been used very recently
+        (position 0, 1, or 2)
+      - (1 - (cache position - 3) / (32 - 3)) ** 1.5
+        otherwise
+
+      and valence score is 2 * (valence ** (-0.5)). The score is
+      finally multiplied by VCACHE_PRECISION (which is 1000 by
+      default), and rounded to the nearest integer.
     */
     int get(int cache_position, int valence) const;
 };
