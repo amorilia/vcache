@@ -44,130 +44,112 @@ http://home.comcast.net/~tom_forsyth/papers/fast_vert_cache_opt.html
 //
 // ***** END LICENSE BLOCK *****
 
-class VertexScore:
-    /* Vertex score calculation. */
-    // constants used for scoring algorithm
-    CACHE_SIZE = 32 // higher values yield virtually no improvement
-    /* The size of the modeled cache. */
+#include <cmath> // std::pow
+#include <vector> // std::vector
 
-    CACHE_DECAY_POWER = 1.5
-    LAST_TRI_SCORE = 0.75
-    VALENCE_BOOST_SCALE = 2.0
-    VALENCE_BOOST_POWER = 0.5
+#ifndef VCACHE_CACHE_SIZE
+// The size of the modeled cache. Values larger than 32 yield
+// virtually no improvement.
+#define VCACHE_CACHE_SIZE 32
+#endif
 
-    // implementation note: limitation of 255 triangles per vertex
-    // this is unlikely to be exceeded...
-    MAX_TRIANGLES_PER_VERTEX = 255
+#ifndef VCACHE_MAX_VALENCE
+// Limitation of 255 triangles per vertex, which is unlikely to be
+// exceeded.
+#define VCACHE_MAX_VALENCE 256
+#endif
 
-    def __init__(self):
-        // calculation of score is precalculated for speed
-        self.precalculate()
+#ifndef VCACHE_PRECISION
+#define VCACHE_PRECISION 1000
+#endif
 
-    def precalculate(self):
-        self.CACHE_SCORE = [
-            self.LAST_TRI_SCORE
-            if cache_position < 3 else
-            ((self.CACHE_SIZE - cache_position)
-             / (self.CACHE_SIZE - 3)) ** self.CACHE_DECAY_POWER
-            for cache_position in range(self.CACHE_SIZE)]
+/* Vertex score calculation. */
+class VertexScore
+{
+private:
+    int CACHE_SCORE[VCACHE_CACHE_SIZE];
+    int VALENCE_SCORE[VCACHE_MAX_VALENCE];
 
-        self.VALENCE_SCORE = [
-            self.VALENCE_BOOST_SCALE * (valence ** (-self.VALENCE_BOOST_POWER))
-            if valence > 0 else None
-            for valence in range(self.MAX_TRIANGLES_PER_VERTEX + 1)]
+public:
+    VertexScore(
+        float cache_decay_power=1.5,
+        float last_tri_score=0.75,
+        float valence_boost_scale=2.0,
+        float valence_boost_power=0.5)
+        : CACHE_SCORE(),
+          VALENCE_SCORE() {
+        for (int cache_position = 0; cache_position < VCACHE_CACHE_SIZE; cache_position++) {
+            if (cache_position < 3) {
+                CACHE_SCORE[cache_position] =
+                    0.5 + VCACHE_PRECISION * last_tri_score;
+            } else {
+                CACHE_SCORE[cache_position] =
+                    0.5 + VCACHE_PRECISION * std::pow(
+                        float(VCACHE_CACHE_SIZE - cache_position) / (VCACHE_CACHE_SIZE - 3),
+                        cache_decay_power);
+            };
+        };
+        for (int valence = 0; valence < VCACHE_MAX_VALENCE; valence++) {
+            if (valence == 0) {
+                VALENCE_SCORE[valence] = 0;
+            } else {
+                VALENCE_SCORE[valence] =
+                    0.5 + VCACHE_PRECISION * valence_boost_scale * std::pow(
+                        valence, -valence_boost_power);
+            };
+        };
+    };
 
-    def update_score(self, vertex_info):
-        /* Update score:
+    /* Calculate score:
 
-        * -1 if vertex has no triangles
-        * cache score + valence score otherwise
+    * -1 if vertex has no triangles
+    * cache score + valence score otherwise
 
-        where cache score is
+    where cache score is
 
-        * 0 if vertex is not in cache
-        * 0.75 if vertex has been used very recently
-          (position 0, 1, or 2)
-        * (1 - (cache position - 3) / (32 - 3)) ** 1.5
-          otherwise
+    * 0 if vertex is not in cache
+    * 0.75 if vertex has been used very recently
+      (position 0, 1, or 2)
+    * (1 - (cache position - 3) / (32 - 3)) ** 1.5
+      otherwise
 
-        and valence score is 2 * (num triangles ** (-0.5))
+    and valence score is 2 * (num triangles ** (-0.5))
 
-        >>> vertex_score = VertexScore()
-        >>> def get_score(cache_position, triangle_indices):
-        ...     vert = VertexInfo(cache_position=cache_position,
-        ...                       triangle_indices=triangle_indices)
-        ...     vertex_score.update_score(vert)
-        ...     return vert.score
-        >>> for cache_position in [-1, 0, 1, 2, 3, 4, 5]:
-        ...     print("cache position = {0}".format(cache_position))
-        ...     for num_triangles in range(4):
-        ...         print("  num triangles = {0} : {1:.3f}"
-        ...               .format(num_triangles,
-        ...                       get_score(cache_position,
-        ...                                 list(range(num_triangles)))))
-        cache position = -1
-          num triangles = 0 : -1.000
-          num triangles = 1 : 2.000
-          num triangles = 2 : 1.414
-          num triangles = 3 : 1.155
-        cache position = 0
-          num triangles = 0 : -1.000
-          num triangles = 1 : 2.750
-          num triangles = 2 : 2.164
-          num triangles = 3 : 1.905
-        cache position = 1
-          num triangles = 0 : -1.000
-          num triangles = 1 : 2.750
-          num triangles = 2 : 2.164
-          num triangles = 3 : 1.905
-        cache position = 2
-          num triangles = 0 : -1.000
-          num triangles = 1 : 2.750
-          num triangles = 2 : 2.164
-          num triangles = 3 : 1.905
-        cache position = 3
-          num triangles = 0 : -1.000
-          num triangles = 1 : 3.000
-          num triangles = 2 : 2.414
-          num triangles = 3 : 2.155
-        cache position = 4
-          num triangles = 0 : -1.000
-          num triangles = 1 : 2.949
-          num triangles = 2 : 2.363
-          num triangles = 3 : 2.103
-        cache position = 5
-          num triangles = 0 : -1.000
-          num triangles = 1 : 2.898
-          num triangles = 2 : 2.313
-          num triangles = 3 : 2.053
-        */
-        if not vertex_info.triangle_indices:
+    */
+    int get(int cache_position, int valence) {
+        if (valence <= 0) {
             // no triangle needs this vertex
-            vertex_info.score = -1
-            return
+            return -VCACHE_PRECISION;
+        } else {
+            if ((cache_position < 0) || (cache_position >= VCACHE_CACHE_SIZE)) {
+                // not in cache, so only valence score
+                return VALENCE_SCORE[valence];
+            } else if (valence >= VCACHE_MAX_VALENCE) {
+                // if vertex has an insane number of triangles then
+                // its valence score is approximately zero anyway, so
+                // only cache score (note that this will probably NEVER happen)
+                return CACHE_SCORE[cache_position];
+            } else {
+                // in cache, and has triangles, so return both scores
+                return CACHE_SCORE[cache_position] + VALENCE_SCORE[valence];
+            };
+        };
+    };
+};
 
-        if vertex_info.cache_position < 0:
-            // not in cache
-            vertex_info.score = 0
-        else:
-            // use cache score lookup table
-            vertex_info.score = self.CACHE_SCORE[vertex_info.cache_position]
+/* Stores information about a vertex. */
+class VertexInfo
+{
+public:
+    int cache_position;
+    int score;
+    // only triangles that have *not* yet been drawn are in this list
+    std::vector<int> triangle_indices;
 
-        // bonus points for having low number of triangles still in use
-        vertex_info.score += self.VALENCE_SCORE[
-            len(vertex_info.triangle_indices)]
+    VertexInfo() : cache_position(-1), score(-1), triangle_indices() {};
+};
 
-class VertexInfo:
-    /* Stores information about a vertex. */
-
-    def __init__(self, cache_position=-1, score=-1,
-                 triangle_indices=None):
-        self.cache_position = cache_position
-        self.score = score
-        // only triangles that have *not* yet been drawn are in this list
-        self.triangle_indices = ([] if triangle_indices is None
-                                 else triangle_indices)
-
+/* TODO
 class TriangleInfo:
     def __init__(self, score=0, vertex_indices=None):
         self.score = score
@@ -178,6 +160,7 @@ class Mesh:
     /* Simple mesh implementation which keeps track of which triangles
     are used by which vertex, and vertex cache positions.
     */
+/* TODO
 
     _DEBUG = False // to enable debugging of the algorithm
 
@@ -208,6 +191,7 @@ class Mesh:
         >>> [triangle_info.vertex_indices for triangle_info in m.triangle_infos]
         [(0, 1, 2), (1, 3, 2)]
         */
+/* TODO
         // initialize vertex and triangle information, and vertex cache
         self.vertex_infos = []
         self.triangle_infos = []
@@ -244,6 +228,7 @@ class Mesh:
         >>> m.get_cache_optimized_triangles()
         [(7, 8, 9), (0, 1, 2), (2, 3, 4)]
         */
+/* TODO
         triangles = []
         cache = collections.deque()
         // set of vertex indices whose scores were updated in the previous run
@@ -333,6 +318,7 @@ def get_cache_optimized_triangles(triangles):
     :param triangles: The triangles (triples of vertex indices).
     :return: A list of reordered triangles.
     */
+/* TODO
     mesh = Mesh(triangles)
     return mesh.get_cache_optimized_triangles()
 
@@ -344,6 +330,7 @@ def get_unique_triangles(triangles):
     >>> list(get_unique_triangles([(0, 1, 2), (1, 1, 0), (2, 0, 1)]))
     [(0, 1, 2)]
     */
+/* TODO
     _added_triangles = set()
     for v0, v1, v2 in triangles:
         if v0 == v1 or v1 == v2 or v2 == v0:
@@ -376,6 +363,7 @@ def stable_stripify(triangles, stitchstrips=False):
     >>> stable_stripify([(0, 1, 2), (0, 3, 1), (0, 4, 3), (3, 5, 1), (6, 3, 4)])
     [[2, 0, 1, 3], [0, 4, 3], [3, 5, 1], [6, 3, 4]]
     */
+/* TODO
     // all orientation preserving triangle permutations
     indices = ((0, 1, 2), (1, 2, 0), (2, 0, 1))
     // list of all strips so far
@@ -438,6 +426,7 @@ def stable_stripify(triangles, stitchstrips=False):
 
 def stripify(triangles, stitchstrips=False):
     /* Stripify triangles, optimizing for the vertex cache. */
+/* TODO
     return stable_stripify(
         get_cache_optimized_triangles(triangles),
         stitchstrips=stitchstrips)
@@ -454,6 +443,7 @@ def get_cache_optimized_vertex_map(strips):
     >>> get_cache_optimized_vertex_map([(5,2,1),(0,2,3)])
     [3, 2, 1, 4, None, 0]
     */
+/* TODO
     if strips:
         num_vertices = max(max(strip) if strip else -1
                            for strip in strips) + 1
@@ -473,6 +463,7 @@ def average_transform_to_vertex_ratio(strips, cache_size=16):
     and triangles/strips. See
     http://castano.ludicon.com/blog/2009/01/29/acmr/
     */
+/* TODO
     cache = collections.deque(maxlen=cache_size)
     // get number of vertices
     vertices = set([])
@@ -494,3 +485,4 @@ def average_transform_to_vertex_ratio(strips, cache_size=16):
         // no vertices...
         return 1
 
+*/
