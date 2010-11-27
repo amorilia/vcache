@@ -1,7 +1,15 @@
 cmake_minimum_required(VERSION 2.6)
 project(VCACHE)
 
+# version info
+set(VCACHE_VERSION 0.0.1)
+set(VCACHE_HEXVERSION 0x000001)
+
+# configuration
+configure_file(${VCACHE_SOURCE_DIR}/Doxyfile.in ${VCACHE_SOURCE_DIR}/Doxyfile)
+
 # find boost
+find_package(Boost 1.44.0 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 include_directories(${Boost_INCLUDE_DIRS})
 
