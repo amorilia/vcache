@@ -44,6 +44,9 @@ http://home.comcast.net/~tom_forsyth/papers/fast_vert_cache_opt.html
 //
 // ***** END LICENSE BLOCK *****
 
+#ifndef VCACHE_HPP_INCLUDED
+#define VCACHE_HPP_INCLUDED
+
 #include <algorithm> // std::max_element
 #include <boost/foreach.hpp> // BOOST_FOREACH
 #include <cmath> // std::pow
@@ -52,106 +55,8 @@ http://home.comcast.net/~tom_forsyth/papers/fast_vert_cache_opt.html
 #include <set> // std::set
 #include <stdexcept> // std::runtime_error
 
-// to enable debugging of the algorithm, define VCACHE_DEBUG
-//#define VCACHE_DEBUG
-
-#ifndef VCACHE_CACHE_SIZE
-// The size of the modeled cache. Values larger than 32 yield
-// virtually no improvement.
-#define VCACHE_CACHE_SIZE 32
-#endif
-
-#ifndef VCACHE_VALENCE_SIZE
-// Limitation of 255 triangles per vertex, which is unlikely to be
-// exceeded.
-#define VCACHE_VALENCE_SIZE 256
-#endif
-
-#ifndef VCACHE_PRECISION
-#define VCACHE_PRECISION 1000
-#endif
-
-/* Vertex score calculation. */
-class VertexScore
-{
-private:
-    int CACHE_SCORE[VCACHE_CACHE_SIZE];
-    int VALENCE_SCORE[VCACHE_VALENCE_SIZE];
-
-public:
-    VertexScore(
-        float cache_decay_power=1.5,
-        float last_tri_score=0.75,
-        float valence_boost_scale=2.0,
-        float valence_boost_power=0.5)
-        : CACHE_SCORE(),
-          VALENCE_SCORE() {
-        for (int cache_position = 0; cache_position < VCACHE_CACHE_SIZE; cache_position++) {
-            if (cache_position < 3) {
-                CACHE_SCORE[cache_position] =
-                    0.5 + VCACHE_PRECISION * last_tri_score;
-            } else {
-                CACHE_SCORE[cache_position] =
-                    0.5 + VCACHE_PRECISION * std::pow(
-                        float(VCACHE_CACHE_SIZE - cache_position) / (VCACHE_CACHE_SIZE - 3),
-                        cache_decay_power);
-            };
-        };
-        for (int valence = 0; valence < VCACHE_VALENCE_SIZE; valence++) {
-            if (valence == 0) {
-                VALENCE_SCORE[valence] = 0;
-            } else {
-                VALENCE_SCORE[valence] =
-                    0.5 + VCACHE_PRECISION * valence_boost_scale * std::pow(
-                        valence, -valence_boost_power);
-            };
-        };
-    };
-
-    /* Calculate score:
-
-    * -1 if vertex has no triangles
-    * cache score + valence score otherwise
-
-    where cache score is
-
-    * 0 if vertex is not in cache
-    * 0.75 if vertex has been used very recently
-      (position 0, 1, or 2)
-    * (1 - (cache position - 3) / (32 - 3)) ** 1.5
-      otherwise
-
-    and valence score is 2 * (num triangles ** (-0.5))
-
-    */
-    int get(int cache_position, int valence) const {
-        // validate arguments
-        if (cache_position >= VCACHE_CACHE_SIZE) {
-            throw std::runtime_error("cache position exceeds cache size");
-        };
-        if (valence < 0) {
-            throw std::runtime_error("negative valence");
-        };
-        // calculate score
-        if (valence == 0) {
-            // no triangle needs this vertex
-            return -VCACHE_PRECISION;
-        } else {
-            if (cache_position < 0) {
-                // not in cache, so only valence score
-                return VALENCE_SCORE[valence];
-            } else if (valence >= VCACHE_VALENCE_SIZE) {
-                // if vertex has an insane number of triangles then
-                // its valence score is approximately zero anyway, so
-                // only cache score (note that this will probably NEVER happen)
-                return CACHE_SCORE[cache_position];
-            } else {
-                // in cache, and has triangles, so return both scores
-                return CACHE_SCORE[cache_position] + VALENCE_SCORE[valence];
-            };
-        };
-    };
-};
+#include "vcache_defines.hpp"
+#include "vcache_score.hpp"
 
 /* Stores information about a vertex. */
 class VertexInfo
@@ -501,3 +406,6 @@ def average_transform_to_vertex_ratio(strips, cache_size=16):
         return 1
 
 */
+
+#endif
+
