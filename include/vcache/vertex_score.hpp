@@ -41,7 +41,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <cmath> // std::pow
 #include <stdexcept> // std::runtime_error
 
-#include "vcache_defines.hpp"
+#include "vcache/defines.hpp"
 
 /* Vertex score calculation. */
 class VertexScore

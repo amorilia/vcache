@@ -55,8 +55,8 @@ http://home.comcast.net/~tom_forsyth/papers/fast_vert_cache_opt.html
 #include <set> // std::set
 #include <stdexcept> // std::runtime_error
 
-#include "vcache_defines.hpp"
-#include "vcache_score.hpp"
+#include "vcache/defines.hpp"
+#include "vcache/vertex_score.hpp"
 
 /* Stores information about a vertex. */
 class VertexInfo
