@@ -44,12 +44,6 @@ http://home.comcast.net/~tom_forsyth/papers/fast_vert_cache_opt.html
 //
 // ***** END LICENSE BLOCK *****
 
-from __future__ import division
-
-import collections
-
-from pyffi.utils.tristrip import OrientedStrip
-
 class VertexScore:
     /* Vertex score calculation. */
     // constants used for scoring algorithm
