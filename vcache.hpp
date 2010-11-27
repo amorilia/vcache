@@ -51,10 +51,10 @@ import collections
 from pyffi.utils.tristrip import OrientedStrip
 
 class VertexScore:
-    """Vertex score calculation."""
+    /* Vertex score calculation. */
     // constants used for scoring algorithm
     CACHE_SIZE = 32 // higher values yield virtually no improvement
-    """The size of the modeled cache."""
+    /* The size of the modeled cache. */
 
     CACHE_DECAY_POWER = 1.5
     LAST_TRI_SCORE = 0.75
@@ -83,7 +83,7 @@ class VertexScore:
             for valence in range(self.MAX_TRIANGLES_PER_VERTEX + 1)]
 
     def update_score(self, vertex_info):
-        """Update score:
+        /* Update score:
 
         * -1 if vertex has no triangles
         * cache score + valence score otherwise
@@ -146,7 +146,7 @@ class VertexScore:
           num triangles = 1 : 2.898
           num triangles = 2 : 2.313
           num triangles = 3 : 2.053
-        """
+        */
         if not vertex_info.triangle_indices:
             // no triangle needs this vertex
             vertex_info.score = -1
@@ -164,7 +164,7 @@ class VertexScore:
             len(vertex_info.triangle_indices)]
 
 class VertexInfo:
-    """Stores information about a vertex."""
+    /* Stores information about a vertex. */
 
     def __init__(self, cache_position=-1, score=-1,
                  triangle_indices=None):
@@ -181,14 +181,14 @@ class TriangleInfo:
                                else vertex_indices)
 
 class Mesh:
-    """Simple mesh implementation which keeps track of which triangles
+    /* Simple mesh implementation which keeps track of which triangles
     are used by which vertex, and vertex cache positions.
-    """
+    */
 
     _DEBUG = False // to enable debugging of the algorithm
 
     def __init__(self, triangles, vertex_score=None):
-        """Initialize mesh from given set of triangles.
+        /* Initialize mesh from given set of triangles.
 
         Empty mesh
         ----------
@@ -213,7 +213,7 @@ class Mesh:
         [[0], [0, 1], [0, 1], [1]]
         >>> [triangle_info.vertex_indices for triangle_info in m.triangle_infos]
         [(0, 1, 2), (1, 3, 2)]
-        """
+        */
         // initialize vertex and triangle information, and vertex cache
         self.vertex_infos = []
         self.triangle_infos = []
@@ -244,12 +244,12 @@ class Mesh:
                 for vertex in triangle_info.vertex_indices)
 
     def get_cache_optimized_triangles(self):
-        """Reorder triangles in a cache efficient way.
+        /* Reorder triangles in a cache efficient way.
 
         >>> m = Mesh([(0,1,2), (7,8,9),(2,3,4)])
         >>> m.get_cache_optimized_triangles()
         [(7, 8, 9), (0, 1, 2), (2, 3, 4)]
-        """
+        */
         triangles = []
         cache = collections.deque()
         // set of vertex indices whose scores were updated in the previous run
@@ -333,23 +333,23 @@ class Mesh:
         return triangles
 
 def get_cache_optimized_triangles(triangles):
-    """Calculate cache optimized triangles, and return the result as
+    /* Calculate cache optimized triangles, and return the result as
     a reordered set of triangles or strip of stitched triangles.
 
     :param triangles: The triangles (triples of vertex indices).
     :return: A list of reordered triangles.
-    """
+    */
     mesh = Mesh(triangles)
     return mesh.get_cache_optimized_triangles()
 
 def get_unique_triangles(triangles):
-    """Yield unique triangles.
+    /* Yield unique triangles.
 
     >>> list(get_unique_triangles([(0, 1, 2), (1, 1, 0), (2, 1, 0), (1, 0, 0)]))
     [(0, 1, 2), (0, 2, 1)]
     >>> list(get_unique_triangles([(0, 1, 2), (1, 1, 0), (2, 0, 1)]))
     [(0, 1, 2)]
-    """
+    */
     _added_triangles = set()
     for v0, v1, v2 in triangles:
         if v0 == v1 or v1 == v2 or v2 == v0:
@@ -366,7 +366,7 @@ def get_unique_triangles(triangles):
             _added_triangles.add(verts)
 
 def stable_stripify(triangles, stitchstrips=False):
-    """Stitch all triangles together into a strip without changing the
+    /* Stitch all triangles together into a strip without changing the
     triangle ordering (for example because their ordering is already
     optimized).
 
@@ -381,7 +381,7 @@ def stable_stripify(triangles, stitchstrips=False):
     [[0, 1, 2, 3, 4], [1, 4, 5, 6]]
     >>> stable_stripify([(0, 1, 2), (0, 3, 1), (0, 4, 3), (3, 5, 1), (6, 3, 4)])
     [[2, 0, 1, 3], [0, 4, 3], [3, 5, 1], [6, 3, 4]]
-    """
+    */
     // all orientation preserving triangle permutations
     indices = ((0, 1, 2), (1, 2, 0), (2, 0, 1))
     // list of all strips so far
@@ -443,13 +443,13 @@ def stable_stripify(triangles, stitchstrips=False):
         return [list(result)]
 
 def stripify(triangles, stitchstrips=False):
-    """Stripify triangles, optimizing for the vertex cache."""
+    /* Stripify triangles, optimizing for the vertex cache. */
     return stable_stripify(
         get_cache_optimized_triangles(triangles),
         stitchstrips=stitchstrips)
 
 def get_cache_optimized_vertex_map(strips):
-    """Map vertices so triangles/strips have consequetive indices.
+    /* Map vertices so triangles/strips have consequetive indices.
 
     >>> get_cache_optimized_vertex_map([])
     []
@@ -459,7 +459,7 @@ def get_cache_optimized_vertex_map(strips):
     [0, 1, None, 2]
     >>> get_cache_optimized_vertex_map([(5,2,1),(0,2,3)])
     [3, 2, 1, 4, None, 0]
-    """
+    */
     if strips:
         num_vertices = max(max(strip) if strip else -1
                            for strip in strips) + 1
@@ -475,10 +475,10 @@ def get_cache_optimized_vertex_map(strips):
     return vertex_map
 
 def average_transform_to_vertex_ratio(strips, cache_size=16):
-    """Calculate number of transforms per vertex for a given cache size
+    /* Calculate number of transforms per vertex for a given cache size
     and triangles/strips. See
     http://castano.ludicon.com/blog/2009/01/29/acmr/
-    """
+    */
     cache = collections.deque(maxlen=cache_size)
     // get number of vertices
     vertices = set([])
@@ -500,6 +500,3 @@ def average_transform_to_vertex_ratio(strips, cache_size=16):
         // no vertices...
         return 1
 
-if __name__=='__main__':
-    import doctest
-    doctest.testmod()
