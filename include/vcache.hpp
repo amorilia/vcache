@@ -92,6 +92,7 @@ public:
 /* Simple mesh implementation which keeps track of which triangles
    are used by which vertex, and vertex cache positions.
 */
+/* TODO
 class Mesh
 {
 public:
@@ -100,6 +101,7 @@ public:
     VertexScore vertex_score;
 
     /* Initialize mesh from given set of triangles. */
+/* TODO
     Mesh(std::list<std::list<int> > const & triangles,
          VertexScore const & vertex_score)
         : vertex_infos(), triangle_infos(), vertex_score(vertex_score) {

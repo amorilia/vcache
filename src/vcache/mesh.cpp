@@ -121,15 +121,14 @@ MVertexPtr Mesh::add_vertex(MFacePtr mface, int vertex)
             // update list of faces that have this vertex
             mvertex->mfaces.insert(mface);
             return mvertex;
-        } else {
-            // create vertex
-            MVertexPtr mvertex(new MVertex(vertex));
-            _vertices[vertex] = mvertex;
-            // update list of faces that have this vertex
-            mvertex->mfaces.insert(mface);
-            return mvertex;
         };
     };
+    // create vertex
+    MVertexPtr mvertex(new MVertex(vertex));
+    _vertices[vertex] = mvertex;
+    // update list of faces that have this vertex
+    mvertex->mfaces.insert(mface);
+    return mvertex;
 };
 
 Mesh::Mesh() : _faces(), _vertices(), mfaces() {};
@@ -146,7 +145,7 @@ MFacePtr Mesh::add_face(int v0, int v1, int v2)
         }
     }
     // create face
-    MFacePtr mface(new MFace());
+    MFacePtr mface(new MFace);
     _faces[face] = mface;
     mfaces.insert(mface);
     // create vertices and update links between faces and vertices
