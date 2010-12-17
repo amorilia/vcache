@@ -81,7 +81,7 @@ public:
 
       \throws std::runtime_error When cache_position >=
           VCACHE_CACHE_SIZE or valence < 0.
-      
+
       The score is calculated as follows (assuming default parameter
       values):
 

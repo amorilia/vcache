@@ -18,6 +18,7 @@ include_directories(${VCACHE_SOURCE_DIR}/include)
 
 # build the actual library
 add_library(vcache
+    src/vcache/mesh.cpp
     src/vcache/vertex_score.cpp
     src/vcache.cpp
 )
