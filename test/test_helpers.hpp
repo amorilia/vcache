@@ -48,6 +48,14 @@ ostream & operator<<(ostream & stream, boost::weak_ptr<T> const & data)
     return stream;
 };
 
+ostream & operator<<(ostream & stream, MVertex const & mvertex)
+{
+    stream << "MVertex( ";
+    stream << mvertex.vertex;
+    stream << ")";
+    return stream;
+};
+
 ostream & operator<<(ostream & stream, MFace const & mface)
 {
     stream << "MFace( ";

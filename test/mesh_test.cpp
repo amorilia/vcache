@@ -80,7 +80,6 @@ BOOST_AUTO_TEST_CASE(mvertex_mfaces_test_0)
     MVertexPtr v2 = m._vertices[2];
     MVertexPtr v3 = m._vertices[3];
     MVertexPtr v4 = m._vertices[4];
-    std::set<MFacePtr> mfaces;
 
     // 0->-1
     //  \ / \
@@ -89,7 +88,24 @@ BOOST_AUTO_TEST_CASE(mvertex_mfaces_test_0)
     //    \ /
     //     4
 
-    // correct faces?
+    // check vertices
+    BOOST_CHECK_EQUAL(v0->vertex, 0);
+    BOOST_CHECK_EQUAL(v1->vertex, 1);
+    BOOST_CHECK_EQUAL(v2->vertex, 2);
+    BOOST_CHECK_EQUAL(v3->vertex, 3);
+    BOOST_CHECK_EQUAL(v4->vertex, 4);
+    // check face vertices
+    BOOST_CHECK_EQUAL(f0->mv0, v0);
+    BOOST_CHECK_EQUAL(f0->mv1, v1);
+    BOOST_CHECK_EQUAL(f0->mv2, v2);
+    BOOST_CHECK_EQUAL(f1->mv0, v1);
+    BOOST_CHECK_EQUAL(f1->mv1, v3);
+    BOOST_CHECK_EQUAL(f1->mv2, v2);
+    BOOST_CHECK_EQUAL(f2->mv0, v2);
+    BOOST_CHECK_EQUAL(f2->mv1, v3);
+    BOOST_CHECK_EQUAL(f2->mv2, v4);
+    // check vertex faces
+    std::set<MFacePtr> mfaces;
     // vertex 0
     mfaces.clear();
     mfaces.insert(f0);
@@ -130,9 +146,29 @@ BOOST_AUTO_TEST_CASE(mvertex_mfaces_test_1)
     MVertexPtr v3 = m._vertices[3];
     MVertexPtr v4 = m._vertices[4];
     MVertexPtr v5 = m._vertices[5];
-    std::set<MFacePtr> mfaces;
 
-    // correct faces?
+    // check vertices
+    BOOST_CHECK_EQUAL(v0->vertex, 0);
+    BOOST_CHECK_EQUAL(v1->vertex, 1);
+    BOOST_CHECK_EQUAL(v2->vertex, 2);
+    BOOST_CHECK_EQUAL(v3->vertex, 3);
+    BOOST_CHECK_EQUAL(v4->vertex, 4);
+    BOOST_CHECK_EQUAL(v5->vertex, 5);
+    // check face vertices
+    BOOST_CHECK_EQUAL(f0->mv0, v0);
+    BOOST_CHECK_EQUAL(f0->mv1, v1);
+    BOOST_CHECK_EQUAL(f0->mv2, v2);
+    BOOST_CHECK_EQUAL(f1->mv0, v1);
+    BOOST_CHECK_EQUAL(f1->mv1, v3);
+    BOOST_CHECK_EQUAL(f1->mv2, v2);
+    BOOST_CHECK_EQUAL(f2->mv0, v2);
+    BOOST_CHECK_EQUAL(f2->mv1, v3);
+    BOOST_CHECK_EQUAL(f2->mv2, v4);
+    BOOST_CHECK_EQUAL(f3->mv0, v2);
+    BOOST_CHECK_EQUAL(f3->mv1, v3);
+    BOOST_CHECK_EQUAL(f3->mv2, v5);
+    // check vertex faces
+    std::set<MFacePtr> mfaces;
     // vertex 0
     mfaces.clear();
     mfaces.insert(f0);
@@ -173,6 +209,15 @@ BOOST_AUTO_TEST_CASE(mvertex_mfaces_test_2)
     MVertexPtr v0 = m._vertices[0];
     MVertexPtr v1 = m._vertices[1];
     MVertexPtr v2 = m._vertices[2];
+    // check vertices
+    BOOST_CHECK_EQUAL(v0->vertex, 0);
+    BOOST_CHECK_EQUAL(v1->vertex, 1);
+    BOOST_CHECK_EQUAL(v2->vertex, 2);
+    // check face vertices
+    BOOST_CHECK_EQUAL(f->mv0, v0);
+    BOOST_CHECK_EQUAL(f->mv1, v1);
+    BOOST_CHECK_EQUAL(f->mv2, v2);
+    // check vertex faces
     std::set<MFacePtr> mfaces;
     mfaces.clear();
     mfaces.insert(f);
@@ -181,93 +226,28 @@ BOOST_AUTO_TEST_CASE(mvertex_mfaces_test_2)
     BOOST_CHECK_EQUAL(lock_set(v2->mfaces), mfaces);
 }
 
-/*
-
-BOOST_AUTO_TEST_CASE(mesh_empty_test)
+BOOST_AUTO_TEST_CASE(score_mesh_empty_test)
 {
-    std::list<std::list<int> > triangles;
     VertexScore vertex_score;
-    BOOST_CHECK_NO_THROW(Mesh(triangles, vertex_score));
+    Mesh m;
+    BOOST_CHECK_NO_THROW(m.update_score(vertex_score));
 }
 
-BOOST_AUTO_TEST_CASE(mesh_degenerate_test)
+BOOST_AUTO_TEST_CASE(score_mesh_single_test)
 {
-    std::list<int> triangle;
-    std::list<std::list<int> > triangles;
     VertexScore vertex_score;
-    // construct mesh
-    triangle.clear();
-    triangle.push_back(0);
-    triangle.push_back(1);
-    triangle.push_back(2);
-    triangles.push_back(triangle);
-    triangle.clear();
-    triangle.push_back(1);
-    triangle.push_back(2);
-    triangle.push_back(0);
-    triangles.push_back(triangle);
-    Mesh mesh(triangles, vertex_score);
-    // test vertex infos
-    std::set<int> indices;
-    indices.clear();
-    indices.insert(0);
-    BOOST_CHECK_EQUAL(mesh.vertex_infos.size(), 3);
-    BOOST_CHECK_EQUAL(mesh.vertex_infos[0].triangle_indices, indices);
-    BOOST_CHECK_EQUAL(mesh.vertex_infos[1].triangle_indices, indices);
-    BOOST_CHECK_EQUAL(mesh.vertex_infos[2].triangle_indices, indices);
-    // test triangle infos
-    BOOST_CHECK_EQUAL(mesh.triangle_infos.size(), 1);
-    triangle.clear();
-    triangle.push_back(0);
-    triangle.push_back(1);
-    triangle.push_back(2);
-    BOOST_CHECK_EQUAL(mesh.triangle_infos[0].vertex_indices, triangle);
+    Mesh m;
+    m.add_face(0, 1, 2);
+    BOOST_CHECK_NO_THROW(m.update_score(vertex_score));
 }
 
-BOOST_AUTO_TEST_CASE(mesh_double_test)
+BOOST_AUTO_TEST_CASE(score_mesh_double_test)
 {
-    std::list<int> triangle;
-    std::list<std::list<int> > triangles;
     VertexScore vertex_score;
-    // construct mesh
-    triangle.clear();
-    triangle.push_back(0);
-    triangle.push_back(1);
-    triangle.push_back(2);
-    triangles.push_back(triangle);
-    triangle.clear();
-    triangle.push_back(2);
-    triangle.push_back(1);
-    triangle.push_back(3);
-    triangles.push_back(triangle);
-    Mesh mesh(triangles, vertex_score);
-    // test vertex infos
-    std::set<int> indices;
-    BOOST_CHECK_EQUAL(mesh.vertex_infos.size(), 4);
-    indices.clear();
-    indices.insert(0);
-    BOOST_CHECK_EQUAL(mesh.vertex_infos[0].triangle_indices, indices);
-    indices.clear();
-    indices.insert(0);
-    indices.insert(1);
-    BOOST_CHECK_EQUAL(mesh.vertex_infos[1].triangle_indices, indices);
-    BOOST_CHECK_EQUAL(mesh.vertex_infos[2].triangle_indices, indices);
-    indices.clear();
-    indices.insert(1);
-    BOOST_CHECK_EQUAL(mesh.vertex_infos[3].triangle_indices, indices);
-    // test triangle infos
-    BOOST_CHECK_EQUAL(mesh.triangle_infos.size(), 2);
-    triangle.clear();
-    triangle.push_back(0);
-    triangle.push_back(1);
-    triangle.push_back(2);
-    BOOST_CHECK_EQUAL(mesh.triangle_infos[0].vertex_indices, triangle);
-    triangle.clear();
-    triangle.push_back(2);
-    triangle.push_back(1);
-    triangle.push_back(3);
-    BOOST_CHECK_EQUAL(mesh.triangle_infos[1].vertex_indices, triangle);
+    Mesh m;
+    m.add_face(0, 1, 2);
+    m.add_face(2, 1, 3);
+    BOOST_CHECK_NO_THROW(m.update_score(vertex_score));
 }
-*/
 
 BOOST_AUTO_TEST_SUITE_END()
