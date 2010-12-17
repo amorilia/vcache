@@ -222,7 +222,6 @@ std::list<MFacePtr> Mesh::get_cache_optimized_faces(VertexScore const & vertex_s
 
     // emulated cache
     std::deque<MVertexPtr> cache;
-    // add face by face by maximal score, updating the score as we go along
     // set of remaining faces
     std::set<MFacePtr> remaining_faces;
     BOOST_FOREACH(FaceMap::value_type & face, _faces) {
@@ -232,16 +231,19 @@ std::list<MFacePtr> Mesh::get_cache_optimized_faces(VertexScore const & vertex_s
     std::set<MFacePtr> updated_faces;
     // set of vertices whose scores were updated in the previous run
     std::set<MVertexPtr> updated_vertices;
+    // add faces by maximal score, updating the score as we go along
     while (!remaining_faces.empty()) {
         // find the best face, or a good approximation
         MFacePtr best_face;
-        if (!updated_faces.empty()) {
-            // search only recently updated faces (very fast, and almost
-            // always globally optimal)
-            best_face = get_best_face(updated_faces);
-        } else {
-            // global search, slow but accurate (occurs rarely)
+        if (updated_faces.empty()) {
+            // very slow but correct global maximum
             best_face = get_best_face(remaining_faces);
+        } else {
+            // if scores of triangles were updated in the previous run
+            // then restrict the search to those
+            // this is suboptimal, but the difference is usually very
+            // small and it is *much* faster (as noted by Forsyth)
+            best_face = get_best_face(updated_faces);
         };
         // mark as added
         remaining_faces.erase(best_face);
@@ -263,10 +265,11 @@ std::list<MFacePtr> Mesh::get_cache_optimized_faces(VertexScore const & vertex_s
         BOOST_FOREACH(MVertexPtr mvertex, best_verts) {
             std::deque<MVertexPtr>::const_iterator it = std::find(cache.begin(), cache.end(), mvertex);
             if (it == cache.end()) {
+                // mvertex not in cash already: add it
                 cache.push_front(mvertex);
                 if (cache.size() > VCACHE_CACHE_SIZE) {
                     // cache overflow!
-                    // remove vertex from cache
+                    // remove last vertex from cache
                     MVertexPtr removed_mvertex = cache.back();
                     cache.pop_back();
                     // update its cache position
