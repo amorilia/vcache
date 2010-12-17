@@ -1,4 +1,4 @@
-foreach(TEST vcache_test)
+foreach(TEST mesh_test vcache_test)
   add_executable(${TEST} ${TEST}.cpp)
   target_link_libraries (${TEST} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} vcache)
   add_test(${TEST} ${TEST})
