@@ -40,11 +40,10 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <iostream>
 #include <list>
 #include <map>
 #include <set>
-#include <stdexcept>
-#include <vector>
 
 #include "vcache/vertex_score.hpp"
 
@@ -55,6 +54,14 @@ typedef boost::shared_ptr<MVertex> MVertexPtr;
 
 class MFace;
 typedef boost::shared_ptr<MFace> MFacePtr;
+
+class Mesh;
+
+std::ostream & operator<<(std::ostream & stream, MVertex const & mvertex);
+
+std::ostream & operator<<(std::ostream & stream, MFace const & mface);
+
+std::ostream & operator<<(std::ostream & stream, Mesh const & mesh);
 
 //! A vertex with links to other parts of a mesh.
 class MVertex
@@ -71,9 +78,6 @@ public:
 
     //! Note: don't call directly! Use Mesh::add_face.
     MVertex(int vertex);
-
-    //! Dump to std::cout (e.g. for debugging).
-    void dump() const;
 };
 
 //! A standalone non-degenerate oriented face.
@@ -104,9 +108,6 @@ public:
 
     //! Note: don't call directly! Use Mesh::add_face.
     MFace();
-
-    //! Dump to std::cout (e.g. for debugging).
-    void dump() const;
 };
 
 //! A mesh built from faces.
@@ -145,9 +146,6 @@ public:
 
     //! Calculate optimal ordering for the given vertex scoring algorithm.
     std::list<MFacePtr> get_cache_optimized_faces(VertexScore const & vertex_score);
-
-    //! Dump to std::cout (e.g. for debugging).
-    void dump() const;
 };
 
 #endif

@@ -48,22 +48,6 @@ ostream & operator<<(ostream & stream, boost::weak_ptr<T> const & data)
     return stream;
 };
 
-ostream & operator<<(ostream & stream, MVertex const & mvertex)
-{
-    stream << "MVertex( ";
-    stream << mvertex.vertex << " ";
-    stream << ")";
-    return stream;
-};
-
-ostream & operator<<(ostream & stream, MFace const & mface)
-{
-    stream << "MFace( ";
-    stream << mface.mv0->vertex << " " << mface.mv1->vertex << " " << mface.mv2->vertex << " ";
-    stream << ")";
-    return stream;
-};
-
 template <typename T>
 ostream & operator<<(ostream & stream, list<T> const & data)
 {

@@ -35,32 +35,52 @@ POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#include <deque>
-#include <iostream> // for dump
-#include <stdexcept>
-
 #include <boost/foreach.hpp>
+#include <deque>
+#include <stdexcept>
 
 #include "vcache/defines.hpp"
 #include "vcache/mesh.hpp"
+
+std::ostream & operator<<(std::ostream & stream, MVertex const & mvertex)
+{
+    stream << "MVertex(";
+    stream << "vertex=" << mvertex.vertex << ", ";
+    stream << "score=" << mvertex.score << ", ";
+    stream << "cache_position=" << mvertex.cache_position << ", ";
+    stream << "valence=" << mvertex.mfaces.size();
+    stream << ")";
+    return stream;
+};
+
+std::ostream & operator<<(std::ostream & stream, MFace const & mface)
+{
+    stream << "MFace(";
+    stream << "v0=" << mface.mv0->vertex << ", ";
+    stream << "v1=" << mface.mv1->vertex << ", ";
+    stream << "v2=" << mface.mv2->vertex << ", ";
+    stream << "score=" << mface.score;
+    stream << ")";
+    return stream;
+};
+
+std::ostream & operator<<(std::ostream & stream, Mesh const & mesh)
+{
+    stream << mesh._faces.size() << " faces" << std::endl;
+    BOOST_FOREACH(Mesh::FaceMap::value_type face, mesh._faces) {
+        stream << face.second << std::endl;
+    };
+    stream << mesh._vertices.size() << " vertices" << std::endl;
+    BOOST_FOREACH(Mesh::VertexMap::value_type vertex, mesh._vertices) {
+        stream << vertex.second << std::endl;
+    };
+}
 
 MVertex::MVertex(int vertex)
     : vertex(vertex), cache_position(-1), score(-VCACHE_PRECISION), mfaces()
 {
     // nothing to do: faces are set in Mesh::add_face.
 };
-
-void MVertex::dump() const
-{
-    std::cout << "  vertex " << vertex << std::endl;
-    std::cout << "    score     " << score << std::endl;
-    std::cout << "    cache pos " << cache_position << std::endl;
-    BOOST_FOREACH(boost::weak_ptr<MFace> mface, mfaces) {
-        if (MFacePtr f = mface.lock()) {
-            std::cout << "    face      " << f->mv0->vertex << "," << f->mv1->vertex << "," << f->mv2->vertex << std::endl;
-        };
-    };
-}
 
 Face::Face(int _v0, int _v1, int _v2)
 {
@@ -106,12 +126,6 @@ MFace::MFace()
     // nothing to do
 };
 
-void MFace::dump() const
-{
-    std::cout << "  face " << mv0->vertex << "," << mv1->vertex << "," << mv2->vertex << std::endl;
-    std::cout << "    score " << score << std::endl;
-}
-
 MVertexPtr Mesh::add_vertex(MFacePtr mface, int vertex)
 {
     MVertexPtr mvertex;
@@ -149,18 +163,6 @@ MFacePtr Mesh::add_face(int v0, int v1, int v2)
         mface->mv1 = add_vertex(mface, v1);
         mface->mv2 = add_vertex(mface, v2);
         return mface;
-    };
-}
-
-void Mesh::dump() const
-{
-    std::cout << _faces.size() << " faces" << std::endl;
-    BOOST_FOREACH(FaceMap::value_type face, _faces) {
-        face.second->dump();
-    };
-    std::cout << _vertices.size() << " vertices" << std::endl;
-    BOOST_FOREACH(VertexMap::value_type vertex, _vertices) {
-        vertex.second->dump();
     };
 }
 
