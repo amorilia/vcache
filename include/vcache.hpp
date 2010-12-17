@@ -62,63 +62,6 @@ for a detailed description and discussion of the algorithm.
 #include "vcache/defines.hpp"
 #include "vcache/vertex_score.hpp"
 
-/* Simple mesh implementation which keeps track of which triangles
-   are used by which vertex, and vertex cache positions.
-*/
-/* TODO
-class Mesh
-{
-public:
-    std::vector<VertexInfo> vertex_infos;
-    std::vector<TriangleInfo> triangle_infos;
-    VertexScore vertex_score;
-
-    /* Initialize mesh from given set of triangles. */
-/* TODO
-    Mesh(std::list<std::list<int> > const & triangles,
-         VertexScore const & vertex_score)
-        : vertex_infos(), triangle_infos(), vertex_score(vertex_score) {
-
-        if (triangles.empty()) {
-            // special case: no triangles, so nothing to do
-            return;
-        }
-        // add all vertices
-        int num_vertices = 0;
-        BOOST_FOREACH(std::list<int> const & verts, triangles) {
-            num_vertices =
-                std::max(
-                    num_vertices,
-                    *std::max_element(verts.begin(), verts.end()));
-        };
-        ++num_vertices;
-        vertex_infos = std::vector<VertexInfo>(num_vertices);
-        // add all unique triangles
-        int triangle_index = 0;
-        BOOST_FOREACH(std::list<int> const & verts, triangles) {
-            triangle_infos.push_back(TriangleInfo(verts));
-            BOOST_FOREACH(int vertex, verts) {
-                vertex_infos[vertex].triangle_indices.insert(triangle_index);
-            };
-            ++triangle_index;
-        };
-        // calculate score of all vertices
-        BOOST_FOREACH(VertexInfo & vertex_info, vertex_infos) {
-            vertex_info.score =
-                vertex_score.get(
-                    vertex_info.cache_position,
-                    vertex_info.triangle_indices.size());
-        };
-        // calculate score of all triangles
-        BOOST_FOREACH(TriangleInfo & triangle_info, triangle_infos) {
-            triangle_info.score = 0;
-            BOOST_FOREACH(int vertex, triangle_info.vertex_indices) {
-                triangle_info.score += vertex_infos[vertex].score;
-            };
-        };
-    };
-};
-
 /* TODO
     def get_cache_optimized_triangles(self):
         /* Reorder triangles in a cache efficient way.
