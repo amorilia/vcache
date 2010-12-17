@@ -63,14 +63,6 @@ for a detailed description and discussion of the algorithm.
 #include "vcache/vertex_score.hpp"
 
 /* TODO
-    def get_cache_optimized_triangles(self):
-        /* Reorder triangles in a cache efficient way.
-
-        >>> m = Mesh([(0,1,2), (7,8,9),(2,3,4)])
-        >>> m.get_cache_optimized_triangles()
-        [(7, 8, 9), (0, 1, 2), (2, 3, 4)]
-        */
-/* TODO
         triangles = []
         cache = collections.deque()
         // set of vertex indices whose scores were updated in the previous run

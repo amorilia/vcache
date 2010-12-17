@@ -250,4 +250,20 @@ BOOST_AUTO_TEST_CASE(score_mesh_double_test)
     BOOST_CHECK_NO_THROW(m.update_score(vertex_score));
 }
 
+BOOST_AUTO_TEST_CASE(optimize_mesh_test_1)
+{
+    VertexScore vertex_score;
+    Mesh m;
+    MFacePtr f0 = m.add_face(0, 1, 2);
+    MFacePtr f1 = m.add_face(7, 8, 9);
+    MFacePtr f2 = m.add_face(2, 3, 4);
+    BOOST_CHECK_NO_THROW(m.get_cache_optimized_faces(vertex_score));
+
+    std::list<MFacePtr> faces;
+    faces.push_back(f1);
+    faces.push_back(f0);
+    faces.push_back(f2);
+    BOOST_CHECK_EQUAL(faces, m.get_cache_optimized_faces(vertex_score));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
