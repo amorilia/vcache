@@ -129,7 +129,7 @@ MVertexPtr Mesh::add_vertex(MFacePtr mface, int vertex)
     return mvertex;
 };
 
-Mesh::Mesh() : _faces(), _vertices(), mfaces() {};
+Mesh::Mesh() : _faces(), _vertices() {};
 
 MFacePtr Mesh::add_face(int v0, int v1, int v2)
 {
@@ -143,7 +143,6 @@ MFacePtr Mesh::add_face(int v0, int v1, int v2)
         // create face
         MFacePtr mface(new MFace);
         _faces[face] = mface;
-        mfaces.insert(mface);
         // create vertices and update links between faces and vertices
         mface->mv0 = add_vertex(mface, v0);
         mface->mv1 = add_vertex(mface, v1);
@@ -154,9 +153,9 @@ MFacePtr Mesh::add_face(int v0, int v1, int v2)
 
 void Mesh::dump() const
 {
-    std::cout << mfaces.size() << " faces" << std::endl;
-    BOOST_FOREACH(MFacePtr mface, mfaces) {
-        mface->dump();
+    std::cout << _faces.size() << " faces" << std::endl;
+    BOOST_FOREACH(FaceMap::value_type face, _faces) {
+        face.second->dump();
     };
     std::cout << _vertices.size() << " vertices" << std::endl;
     BOOST_FOREACH(VertexMap::value_type vertex, _vertices) {
@@ -175,7 +174,8 @@ void Mesh::update_score(VertexScore const & vertex_score)
                 mvertex->mfaces.size());
     };
     // calculate score of all triangles
-    BOOST_FOREACH(MFacePtr mface, mfaces) {
+    BOOST_FOREACH(FaceMap::value_type face, _faces) {
+        MFacePtr mface = face.second;
         mface->score =
             mface->mv0->score +
             mface->mv1->score +

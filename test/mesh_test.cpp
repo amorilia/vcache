@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(mesh_add_face_test)
     BOOST_CHECK_NO_THROW(m.add_face(0, 1, 2));
     BOOST_CHECK_NO_THROW(m.add_face(2, 1, 3));
     BOOST_CHECK_NO_THROW(m.add_face(2, 3, 4));
-    BOOST_CHECK_EQUAL(m.mfaces.size(), 3);
+    BOOST_CHECK_EQUAL(m._faces.size(), 3);
     BOOST_CHECK_EQUAL(m._vertices.size(), 5);
     // add duplicate face
     BOOST_CHECK_NO_THROW(m.add_face(2, 3, 4));
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(mesh_add_face_test)
     BOOST_CHECK_EQUAL(f0, f1);
     BOOST_CHECK_EQUAL(f0, f2);
     // one extra face, four extra vertices
-    BOOST_CHECK_EQUAL(m.mfaces.size(), 4);
+    BOOST_CHECK_EQUAL(m._faces.size(), 4);
     BOOST_CHECK_EQUAL(m._vertices.size(), 8);
 }
 

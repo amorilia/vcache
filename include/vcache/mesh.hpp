@@ -134,9 +134,6 @@ public:
     //! vertices. Deleted when mesh is locked.
     VertexMap _vertices;
 
-    //! Set containing all faces.
-    std::set<MFacePtr> mfaces;
-
     //! Initialize empty mesh.
     Mesh();
 
