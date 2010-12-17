@@ -113,19 +113,17 @@ void MFace::dump() const
 
 MVertexPtr Mesh::add_vertex(MFacePtr mface, int vertex)
 {
+    MVertexPtr mvertex;
     // search for vertex in mesh
     VertexMap::const_iterator vertex_iter = _vertices.find(vertex);
     if (vertex_iter != _vertices.end()) {
-        if (MVertexPtr mvertex = vertex_iter->second.lock()) {
-            // vertex already exists!
-            // update list of faces that have this vertex
-            mvertex->mfaces.insert(mface);
-            return mvertex;
-        };
+        // vertex already exists!
+        mvertex = vertex_iter->second;
+    } else {
+        // create vertex
+        mvertex = MVertexPtr(new MVertex(vertex));
+        _vertices[vertex] = mvertex;
     };
-    // create vertex
-    MVertexPtr mvertex(new MVertex(vertex));
-    _vertices[vertex] = mvertex;
     // update list of faces that have this vertex
     mvertex->mfaces.insert(mface);
     return mvertex;
@@ -140,25 +138,18 @@ MFacePtr Mesh::add_face(int v0, int v1, int v2)
     FaceMap::const_iterator face_iter = _faces.find(face);
     if (face_iter != _faces.end()) {
         // face already exists!
-        if (MFacePtr old_mface = face_iter->second.lock()) {
-            return old_mface;
-        }
-    }
-    // create face
-    MFacePtr mface(new MFace);
-    _faces[face] = mface;
-    mfaces.insert(mface);
-    // create vertices and update links between faces and vertices
-    mface->mv0 = add_vertex(mface, v0);
-    mface->mv1 = add_vertex(mface, v1);
-    mface->mv2 = add_vertex(mface, v2);
-    return mface;
-}
-
-void Mesh::lock()
-{
-    _vertices.clear();
-    _faces.clear();
+        return face_iter->second;
+    } else {
+        // create face
+        MFacePtr mface(new MFace);
+        _faces[face] = mface;
+        mfaces.insert(mface);
+        // create vertices and update links between faces and vertices
+        mface->mv0 = add_vertex(mface, v0);
+        mface->mv1 = add_vertex(mface, v1);
+        mface->mv2 = add_vertex(mface, v2);
+        return mface;
+    };
 }
 
 void Mesh::dump() const
@@ -169,6 +160,29 @@ void Mesh::dump() const
     };
     std::cout << _vertices.size() << " vertices" << std::endl;
     BOOST_FOREACH(VertexMap::value_type vertex, _vertices) {
-        vertex.second.lock()->dump();
+        vertex.second->dump();
     };
+}
+
+void Mesh::update_score(VertexScore const & vertex_score)
+{
+    // calculate score of all vertices
+    BOOST_FOREACH(VertexMap::value_type vertex, _vertices) {
+        MVertexPtr mvertex = vertex.second;
+        mvertex->score =
+            vertex_score.get(
+                mvertex->cache_position,
+                mvertex->mfaces.size());
+    };
+    // calculate score of all triangles
+    BOOST_FOREACH(MFacePtr mface, mfaces) {
+        mface->score =
+            mface->mv0->score +
+            mface->mv1->score +
+            mface->mv2->score;
+    };
+}
+
+std::list<MFacePtr> Mesh::get_cache_optimized_faces(VertexScore const & vertex_score)
+{
 }

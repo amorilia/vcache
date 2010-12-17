@@ -75,11 +75,11 @@ BOOST_AUTO_TEST_CASE(mvertex_mfaces_test_0)
     MFacePtr f0 = m.add_face(0, 1, 2);
     MFacePtr f1 = m.add_face(1, 3, 2);
     MFacePtr f2 = m.add_face(2, 3, 4);
-    MVertexPtr v0 = m._vertices[0].lock();
-    MVertexPtr v1 = m._vertices[1].lock();
-    MVertexPtr v2 = m._vertices[2].lock();
-    MVertexPtr v3 = m._vertices[3].lock();
-    MVertexPtr v4 = m._vertices[4].lock();
+    MVertexPtr v0 = m._vertices[0];
+    MVertexPtr v1 = m._vertices[1];
+    MVertexPtr v2 = m._vertices[2];
+    MVertexPtr v3 = m._vertices[3];
+    MVertexPtr v4 = m._vertices[4];
     std::set<MFacePtr> mfaces;
 
     // 0->-1
@@ -124,12 +124,12 @@ BOOST_AUTO_TEST_CASE(mvertex_mfaces_test_1)
     MFacePtr f1 = m.add_face(1, 3, 2);
     MFacePtr f2 = m.add_face(2, 3, 4);
     MFacePtr f3 = m.add_face(2, 3, 5);
-    MVertexPtr v0 = m._vertices[0].lock();
-    MVertexPtr v1 = m._vertices[1].lock();
-    MVertexPtr v2 = m._vertices[2].lock();
-    MVertexPtr v3 = m._vertices[3].lock();
-    MVertexPtr v4 = m._vertices[4].lock();
-    MVertexPtr v5 = m._vertices[5].lock();
+    MVertexPtr v0 = m._vertices[0];
+    MVertexPtr v1 = m._vertices[1];
+    MVertexPtr v2 = m._vertices[2];
+    MVertexPtr v3 = m._vertices[3];
+    MVertexPtr v4 = m._vertices[4];
+    MVertexPtr v5 = m._vertices[5];
     std::set<MFacePtr> mfaces;
 
     // correct faces?
@@ -170,9 +170,9 @@ BOOST_AUTO_TEST_CASE(mvertex_mfaces_test_2)
     // single triangle mesh
     Mesh m;
     MFacePtr f = m.add_face(0, 1, 2);
-    MVertexPtr v0 = m._vertices[0].lock();
-    MVertexPtr v1 = m._vertices[1].lock();
-    MVertexPtr v2 = m._vertices[2].lock();
+    MVertexPtr v0 = m._vertices[0];
+    MVertexPtr v1 = m._vertices[1];
+    MVertexPtr v2 = m._vertices[2];
     std::set<MFacePtr> mfaces;
     mfaces.clear();
     mfaces.insert(f);
@@ -182,15 +182,6 @@ BOOST_AUTO_TEST_CASE(mvertex_mfaces_test_2)
 }
 
 /*
-BOOST_AUTO_TEST_CASE(triangle_info_test)
-{
-    BOOST_CHECK_THROW(TriangleInfo(std::list<int>()), std::runtime_error);
-    BOOST_CHECK_THROW(TriangleInfo(std::list<int>(1)), std::runtime_error);
-    BOOST_CHECK_THROW(TriangleInfo(std::list<int>(2)), std::runtime_error);
-    BOOST_CHECK_NO_THROW(TriangleInfo(std::list<int>(3)));
-    BOOST_CHECK_THROW(TriangleInfo(std::list<int>(4)), std::runtime_error);
-    BOOST_CHECK_THROW(TriangleInfo(std::list<int>(5)), std::runtime_error);
-}
 
 BOOST_AUTO_TEST_CASE(mesh_empty_test)
 {

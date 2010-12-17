@@ -40,10 +40,13 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <list>
 #include <map>
 #include <set>
 #include <stdexcept>
 #include <vector>
+
+#include "vcache/vertex_score.hpp"
 
 // forward declarations
 
@@ -120,8 +123,8 @@ public:
     // We use maps to avoid duplicate entries and quickly detect
     // adjacent faces.
 
-    typedef std::map<Face, boost::weak_ptr<MFace> > FaceMap;
-    typedef std::map<int, boost::weak_ptr<MVertex> > VertexMap;
+    typedef std::map<Face, MFacePtr> FaceMap;
+    typedef std::map<int, MVertexPtr> VertexMap;
 
     //! Map for mesh faces. Used internally to avoid
     //! duplicates. Deleted when mesh is locked.
@@ -140,9 +143,11 @@ public:
     //! Create new face for mesh, or return existing face.
     MFacePtr add_face(int v0, int v1, int v2);
 
-    //! Lock the mesh. Frees memory by clearing the _edges and _faces
-    //! maps which are only used to update the face adjacency lists.
-    void lock();
+    //! Initialize score of all vertices and all faces.
+    void update_score(VertexScore const & vertex_score);
+
+    //! Calculate optimal ordering for the given vertex scoring algorithm.
+    std::list<MFacePtr> get_cache_optimized_faces(VertexScore const & vertex_score);
 
     //! Dump to std::cout (e.g. for debugging).
     void dump() const;

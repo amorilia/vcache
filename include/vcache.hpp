@@ -62,33 +62,6 @@ for a detailed description and discussion of the algorithm.
 #include "vcache/defines.hpp"
 #include "vcache/vertex_score.hpp"
 
-/* Stores information about a vertex. */
-class VertexInfo
-{
-public:
-    int cache_position;
-    int score;
-    // only triangles that have *not* yet been drawn are in this list
-    std::set<int> triangle_indices;
-
-    VertexInfo() : cache_position(-1), score(-VCACHE_PRECISION), triangle_indices() {};
-};
-
-/* Stores information about a triangle. */
-class TriangleInfo
-{
-public:
-    int score;
-    std::list<int> vertex_indices;
-
-    TriangleInfo(std::list<int> const & vertex_indices)
-        : score(0), vertex_indices(vertex_indices) {
-        if (vertex_indices.size() != 3) {
-            throw std::runtime_error("triangle must have exactly three vertices");
-        };
-    };
-};
-
 /* Simple mesh implementation which keeps track of which triangles
    are used by which vertex, and vertex cache positions.
 */
