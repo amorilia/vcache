@@ -35,6 +35,37 @@ POSSIBILITY OF SUCH DAMAGE.
 
 */
 
+#include <deque>
+#include <list>
+
 #include "vcache.hpp"
 
-// TODO move code from vcache.hpp into this file
+int average_transform_to_vertex_ratio(std::list<std::list<int> > faces, int cache_size)
+{
+    std::deque<int> cache;
+    // get number of vertices
+    std::set<int> vertices;
+    BOOST_FOREACH(std::list<int> const & face, faces) {
+        vertices.insert(face.begin(), face.end());
+    };
+    // get number of cache misses (each miss needs a transform)
+    int num_misses = 0;
+    BOOST_FOREACH(std::list<int> const & face, faces) {
+        BOOST_FOREACH(int const & vertex, face) {
+            std::deque<int>::const_iterator iter = std::find(cache.begin(), cache.end(), vertex);
+            if (iter == cache.end()) {
+                cache.push_front(vertex);
+                if (cache.size() > cache_size) {
+                    cache.pop_back();
+                };
+                ++num_misses;
+            };
+        };
+    };
+    // return result
+    if (vertices.empty()) {
+        return 1;
+    } else {
+        return num_misses / float(vertices.size());
+    };
+}
