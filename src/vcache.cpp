@@ -42,7 +42,17 @@ POSSIBILITY OF SUCH DAMAGE.
 
 std::list<std::list<int> > get_cache_optimized_faces(std::list<std::list<int> > const & faces, VertexScore const & vertex_score)
 {
-    Mesh mesh;
+    // get maximal vertex index
+    Vertex num_vertices = 0;
+    BOOST_FOREACH(std::list<int> const & face, faces) {
+        BOOST_FOREACH(int const & vertex, face) {
+            if (num_vertices <= vertex) {
+                num_vertices = vertex + 1;
+            };
+        };
+    };
+    // initialize mesh
+    Mesh mesh(num_vertices);
     BOOST_FOREACH(std::list<int> const & face, faces) {
         std::list<int>::const_iterator iter = face.begin();
         int v0 = *iter;
@@ -50,12 +60,13 @@ std::list<std::list<int> > get_cache_optimized_faces(std::list<std::list<int> > 
         int v2 = *(++iter);
         mesh.add_face(v0, v1, v2);
     };
+    // find optimal ordering
     std::list<std::list<int> > result;
-    BOOST_FOREACH(MFacePtr const & mface, mesh.get_cache_optimized_faces(vertex_score)) {
+    BOOST_FOREACH(Face const & mface, mesh.get_cache_optimized_faces(vertex_score)) {
         std::list<int> face;
-        face.push_back(mface->mv0->vertex);
-        face.push_back(mface->mv1->vertex);
-        face.push_back(mface->mv2->vertex);
+        face.push_back(mface.v0);
+        face.push_back(mface.v1);
+        face.push_back(mface.v2);
         result.push_back(face);
     };
     return result;

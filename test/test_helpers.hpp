@@ -59,16 +59,19 @@ ostream & operator<<(ostream & stream, list<T> const & data)
     return stream;
 };
 
-// lock all elements of a set of weak_ptr's (this is needed before
-// checking equality)
-template <typename T>
-set<boost::shared_ptr<T> > lock_set(set<boost::weak_ptr<T> > const & data)
-{
-    set<boost::shared_ptr<T> > result;
-    BOOST_FOREACH(boost::weak_ptr<T> const & elem, data) {
-        result.insert(elem.lock());
-    }
-    return result;
 }
 
+// convert raw array to list
+template <typename T, int n, int m>
+std::list<std::list<T> > array_to_list(T raw_data[n][m])
+{
+    std::list<std::list<T> > data;
+    for (int i = 0; i < n; ++i) {
+        std::list<T> row;
+        for (int j = 0; j < m; ++j) {
+            row.push_back(raw_data[i][j]);
+        };
+        data.push_back(row);
+    };
+    return data;
 }

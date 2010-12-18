@@ -38,114 +38,96 @@ POSSIBILITY OF SUCH DAMAGE.
 #ifndef VCACHE_TRIANGLEMESH_HPP_INCLUDED
 #define VCACHE_TRIANGLEMESH_HPP_INCLUDED
 
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
 #include <iostream>
 #include <list>
-#include <map>
 #include <set>
+#include <vector>
 
 #include "vcache/vertex_score.hpp"
 
+//! Vertex representation.
+typedef size_t Vertex;
+
 // forward declarations
-
-class MVertex;
-typedef boost::shared_ptr<MVertex> MVertexPtr;
-
-class MFace;
-typedef boost::shared_ptr<MFace> MFacePtr;
-
+class VertexInfo;
+class Face;
 class Mesh;
 
-std::ostream & operator<<(std::ostream & stream, MVertex const & mvertex);
-
-std::ostream & operator<<(std::ostream & stream, MFace const & mface);
-
+std::ostream & operator<<(std::ostream & stream, VertexInfo const & vertex);
+std::ostream & operator<<(std::ostream & stream, Face const & face);
 std::ostream & operator<<(std::ostream & stream, Mesh const & mesh);
 
 //! A vertex with links to other parts of a mesh.
-class MVertex
+class VertexInfo
 {
 public:
-    int vertex;
+    //! Position of the vertex in the cache.
     int cache_position;
+    //! Only faces that have *not* yet been drawn are in this list
+    //! Note: faces are set in Mesh::add_face.
+    std::set<Face> faces;
+    //! Score as calculated by VertexScore from cache position and
+    //! size of faces.
     int score;
 
-    typedef std::set<boost::weak_ptr<MFace> > MFaces;
-
-    // only triangles that have *not* yet been drawn are in this list
-    MFaces mfaces; //! Note: faces are set in Mesh::add_face.
-
     //! Note: don't call directly! Use Mesh::add_face.
-    MVertex(int vertex);
-};
-
-//! A standalone non-degenerate oriented face.
-class Face
-{
-public:
-    //! Vertex indices, with v0 always being the lowest index.
-    int v0, v1, v2;
-
-    Face(int _v0, int _v1, int _v2);
-
-    bool operator<(const Face & otherface) const;
-    bool operator==(const Face & otherface) const;
+    VertexInfo();
+    //! Update the score. Call this whenever cache position or faces change.
+    void update_score(VertexScore const & vertex_score);
 };
 
 //! A non-degenerate face with links to other parts of a mesh.
-class MFace
+//! The vertices are ordered such that v0 has the lowest index.
+class Face
 {
 public:
-    //! First Vertex.
-    MVertexPtr mv0;
-    //! Second Vertex.
-    MVertexPtr mv1;
-    //! Third Vertex.
-    MVertexPtr mv2;
-    //! Face score (sum of vertex scores).
-    int score;
-
     //! Note: don't call directly! Use Mesh::add_face.
-    MFace();
+    Face(Vertex _v0, Vertex _v1, Vertex _v2);
+    //! Strict inequality by vertex index.
+    bool operator<(Face const & other) const;
+    //! Equality by vertex index.
+    bool operator==(Face const & other) const;
+    //! First Vertex.
+    Vertex const v0;
+    //! Second Vertex.
+    Vertex const v1;
+    //! Third Vertex.
+    Vertex const v2;
 };
 
 //! A mesh built from faces.
 class Mesh
 {
-private:
-    //! Create new vertex for mesh for given face, or return
-    //! existing vertex. Lists of faces of the new/existing vertex
-    //! is also updated. For internal use only, called on each
-    //! vertex of the face in add_face.
-    MVertexPtr add_vertex(MFacePtr mface, int vertex);
-
 public:
-    // We use maps to avoid duplicate entries and quickly detect
-    // adjacent faces.
+    // Using vector of vertices to allow random access.
+    typedef std::vector<VertexInfo> VertexInfos;
+    // Using set to avoid duplicate entries (no FaceInfo needed, score is
+    // calculated on the fly).
+    typedef std::set<Face> Faces;
+    // List of vertices. Used to update score of parts of the mesh.
+    typedef std::list<Vertex> VertexList;
 
-    typedef std::map<Face, MFacePtr> FaceMap;
-    typedef std::map<int, MVertexPtr> VertexMap;
+    //! Faces of the mesh.
+    Faces faces;
 
-    //! Map for mesh faces. Used internally to avoid
-    //! duplicates. Deleted when mesh is locked.
-    FaceMap _faces;
-
-    //! Map for mesh vertices. Used internally to build lists of
-    //! vertices. Deleted when mesh is locked.
-    VertexMap _vertices;
+    //! Vertices and vertex infos of the mesh.
+    VertexInfos vertex_infos;
 
     //! Initialize empty mesh.
-    Mesh();
+    Mesh(Vertex num_vertices);
 
     //! Create new face for mesh, or return existing face.
-    MFacePtr add_face(int v0, int v1, int v2);
+    Face const & add_face(Vertex v0, Vertex v1, Vertex v2);
 
-    //! Initialize score of all vertices and all faces.
-    void update_score(VertexScore const & vertex_score);
+    //! Update score of given vertices, and return set of affected faces.
+    Faces update_score(
+        VertexList const & vertices, VertexScore const & vertex_score);
+
+    //! Erase best face.
+    Face erase_best_face(Faces const & updated_faces);
 
     //! Calculate optimal ordering for the given vertex scoring algorithm.
-    std::list<MFacePtr> get_cache_optimized_faces(VertexScore const & vertex_score);
+    std::list<Face> get_cache_optimized_faces(VertexScore const & vertex_score);
 };
 
 #endif

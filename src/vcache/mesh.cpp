@@ -35,83 +35,75 @@ POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#include <boost/foreach.hpp>
+#define DEBUG
+
+#include <algorithm> // std::find
+#include <boost/foreach.hpp> // BOOST_FOREACH
 #include <deque>
 #include <stdexcept>
 
 #include "vcache/defines.hpp"
 #include "vcache/mesh.hpp"
 
-std::ostream & operator<<(std::ostream & stream, MVertex const & mvertex)
+std::ostream & operator<<(std::ostream & stream, VertexInfo const & vertex)
 {
-    stream << "MVertex(";
-    stream << "vertex=" << mvertex.vertex << ", ";
-    stream << "score=" << mvertex.score << ", ";
-    stream << "cache_position=" << mvertex.cache_position << ", ";
-    stream << "valence=" << mvertex.mfaces.size();
+    stream << "VertexInfo(";
+    stream << "cache_position=" << vertex.cache_position << ", ";
+    stream << "valence=" << vertex.faces.size() << ", ";
+    stream << "score=" << vertex.score;
     stream << ")";
     return stream;
 };
 
-std::ostream & operator<<(std::ostream & stream, MFace const & mface)
+std::ostream & operator<<(std::ostream & stream, Face const & face)
 {
-    stream << "MFace(";
-    stream << "v0=" << mface.mv0->vertex << ", ";
-    stream << "v1=" << mface.mv1->vertex << ", ";
-    stream << "v2=" << mface.mv2->vertex << ", ";
-    stream << "score=" << mface.score;
+    stream << "Face(";
+    stream << "v0=" << face.v0 << ", ";
+    stream << "v1=" << face.v1 << ", ";
+    stream << "v2=" << face.v2;
     stream << ")";
     return stream;
 };
 
 std::ostream & operator<<(std::ostream & stream, Mesh const & mesh)
 {
-    stream << mesh._faces.size() << " faces" << std::endl;
-    BOOST_FOREACH(Mesh::FaceMap::value_type face, mesh._faces) {
-        stream << face.second << std::endl;
+    stream << mesh.faces.size() << " faces" << std::endl;
+    BOOST_FOREACH(Face const & face, mesh.faces) {
+        stream << face << std::endl;
     };
-    stream << mesh._vertices.size() << " vertices" << std::endl;
-    BOOST_FOREACH(Mesh::VertexMap::value_type vertex, mesh._vertices) {
-        stream << vertex.second << std::endl;
+    BOOST_FOREACH(VertexInfo const & vertex_info, mesh.vertex_infos) {
+        stream << vertex_info << std::endl;
     };
 }
 
-MVertex::MVertex(int vertex)
-    : vertex(vertex), cache_position(-1), score(-VCACHE_PRECISION), mfaces()
+VertexInfo::VertexInfo()
+    : cache_position(-1), score(-VCACHE_PRECISION), faces()
 {
     // nothing to do: faces are set in Mesh::add_face.
 };
 
-Face::Face(int _v0, int _v1, int _v2)
+void VertexInfo::update_score(VertexScore const & vertex_score)
 {
-    // ensure it is not degenerate
-    if ((_v0 == _v1) || (_v1 == _v2) || (_v0 == _v2))
-        throw std::runtime_error("Degenerate face.");
-    // order vertex indices
-    if ((_v0 < _v1) && (_v0 < _v2)) {
-        v0 = _v0;
-        v1 = _v1;
-        v2 = _v2;
-    } else if ((_v1 < _v0) && (_v1 < _v2)) {
-        v0 = _v1;
-        v1 = _v2;
-        v2 = _v0;
-    } else if ((_v2 < _v0) && (_v2 < _v1)) {
-        v0 = _v2;
-        v1 = _v0;
-        v2 = _v1;
-    } else {
-        throw std::runtime_error("Oops. Face construction bug!");
-    }
+    score = vertex_score.get(cache_position, faces.size());
 };
 
-bool Face::operator<(const Face & otherface) const
+Face::Face(Vertex v0, Vertex v1, Vertex v2)
+    : v0((v0 < v1 && v0 < v2)?v0:((v1 < v0 && v1 < v2)?v1:v2)),
+      v1((v0 < v1 && v0 < v2)?v1:((v1 < v0 && v1 < v2)?v2:v0)),
+      v2((v0 < v1 && v0 < v2)?v2:((v1 < v0 && v1 < v2)?v0:v1))
 {
-    if (v0 < otherface.v0) return true;
-    if (v0 > otherface.v0) return false;
-    if (v1 < otherface.v1) return true;
-    if (v1 > otherface.v1) return false;
-    if (v2 < otherface.v2) return true;
+    // ensure it is not degenerate
+    if ((v0 == v1) || (v1 == v2) || (v0 == v2))
+        throw std::runtime_error("Degenerate face.");
+};
+
+bool Face::operator<(const Face & other) const
+{
+    if (v0 < other.v0) return true;
+    if (v0 > other.v0) return false;
+    if (v1 < other.v1) return true;
+    if (v1 > other.v1) return false;
+    if (v2 < other.v2) return true;
     return false;
 };
 
@@ -120,189 +112,134 @@ bool Face::operator==(const Face & otherface) const
     return ((v0 == otherface.v0) && (v1 == otherface.v1) && (v2 == otherface.v2));
 };
 
-MFace::MFace()
-    : mv0(), mv1(), mv2(), score(-3 * VCACHE_PRECISION)
-{
-    // nothing to do
-};
+Mesh::Mesh(Vertex num_vertices) : faces(), vertex_infos(num_vertices) {};
 
-MVertexPtr Mesh::add_vertex(MFacePtr mface, int vertex)
+Face const & Mesh::add_face(Vertex v0, Vertex v1, Vertex v2)
 {
-    MVertexPtr mvertex;
-    // search for vertex in mesh
-    VertexMap::const_iterator vertex_iter = _vertices.find(vertex);
-    if (vertex_iter != _vertices.end()) {
-        // vertex already exists!
-        mvertex = vertex_iter->second;
-    } else {
-        // create vertex
-        mvertex = MVertexPtr(new MVertex(vertex));
-        _vertices[vertex] = mvertex;
+    // set::insert inserts a new element or returns existing element
+    std::pair<Faces::iterator, bool> result = faces.insert(Face(v0, v1, v2));
+    if (result.second) {
+        // face did not yet exist
+        // so update links between faces and vertex_infos
+        vertex_infos[v0].faces.insert(*(result.first));
+        vertex_infos[v1].faces.insert(*(result.first));
+        vertex_infos[v2].faces.insert(*(result.first));
     };
-    // update list of faces that have this vertex
-    mvertex->mfaces.insert(mface);
-    return mvertex;
-};
-
-Mesh::Mesh() : _faces(), _vertices() {};
-
-MFacePtr Mesh::add_face(int v0, int v1, int v2)
-{
-    // create face index and search if face already exists in mesh
-    Face face(v0, v1, v2);
-    FaceMap::const_iterator face_iter = _faces.find(face);
-    if (face_iter != _faces.end()) {
-        // face already exists!
-        return face_iter->second;
-    } else {
-        // create face
-        MFacePtr mface(new MFace);
-        _faces[face] = mface;
-        // create vertices and update links between faces and vertices
-        mface->mv0 = add_vertex(mface, v0);
-        mface->mv1 = add_vertex(mface, v1);
-        mface->mv2 = add_vertex(mface, v2);
-        return mface;
-    };
+    return *(result.first);
 }
 
-void Mesh::update_score(VertexScore const & vertex_score)
+std::set<Face> Mesh::update_score(
+    VertexList const & vertices, VertexScore const & vertex_score)
 {
-    // calculate score of all vertices
-    BOOST_FOREACH(VertexMap::value_type vertex, _vertices) {
-        MVertexPtr mvertex = vertex.second;
-        mvertex->score =
-            vertex_score.get(
-                mvertex->cache_position,
-                mvertex->mfaces.size());
+    std::set<Face> updated_faces;
+    // update score of all vertex_infos and keep track of faces that contain them
+    BOOST_FOREACH(Vertex vertex, vertices) {
+        VertexInfo & vertex_info = vertex_infos[vertex];
+        vertex_info.update_score(vertex_score);
+        updated_faces.insert(
+            vertex_info.faces.begin(),
+            vertex_info.faces.end());
     };
-    // calculate score of all triangles
-    BOOST_FOREACH(FaceMap::value_type face, _faces) {
-        MFacePtr mface = face.second;
-        mface->score =
-            mface->mv0->score +
-            mface->mv1->score +
-            mface->mv2->score;
-    };
-}
+    return updated_faces;
+};
 
-// helper function for get_cache_optimized_faces
-MFacePtr get_best_face(std::set<MFacePtr> const & faces)
+Face Mesh::erase_best_face(Faces const & updated_faces)
 {
     if (faces.empty()) {
-        // corner case: if faces is empty, then return a NULL pointer
-        return MFacePtr();
+        throw std::runtime_error("Fatal error in erase_best_face: empty face list.");
     };
-    MFacePtr best_face = *(faces.begin());
-    BOOST_FOREACH(MFacePtr face, faces) {
-        if (best_face->score < face->score) {
+#ifdef DEBUG
+    std::cout << "****** begin erase_best_face ******" << std::endl;
+#endif
+    int best_score = -1000 * VCACHE_PRECISION; // minus infinity
+    Faces::iterator best_face = updated_faces.end();
+    for (Faces::iterator face = updated_faces.begin(); face != updated_faces.end(); ++face) {
+        int face_score =
+            vertex_infos[face->v0].score +
+            vertex_infos[face->v1].score +
+            vertex_infos[face->v2].score;
+#ifdef DEBUG
+        std::cout << *face << " " << face_score << std::endl;
+#endif
+        if (face_score > best_score) {
+            best_score = face_score;
             best_face = face;
         };
     };
-    return best_face;
-};
+    faces.erase(*best_face);
+#ifdef DEBUG
+    std::cout << "best face: " << *best_face << std::endl;
+    std::cout << "****** end get_best_face ******" << std::endl;
+#endif
+    return *best_face;
+}
 
-// helper function to insert faces from a vertex
-void insert_faces(std::set<MFacePtr> & faces, MVertexPtr mvertex)
-{
-    BOOST_FOREACH(boost::weak_ptr<MFace> const & face, mvertex->mfaces) {
-        if (MFacePtr mface = face.lock()) {
-            faces.insert(mface);
-        };
-    };
-};
-
-std::list<MFacePtr> Mesh::get_cache_optimized_faces(VertexScore const & vertex_score)
+std::list<Face> Mesh::get_cache_optimized_faces(VertexScore const & vertex_score)
 {
     // result
-    std::list<MFacePtr> cache_optimized_faces;
-
-    // calculate score of all vertices
-    update_score(vertex_score);
-
+    std::list<Face> cache_optimized_faces;
     // emulated cache
-    std::deque<MVertexPtr> cache;
-    // set of remaining faces
-    std::set<MFacePtr> remaining_faces;
-    BOOST_FOREACH(FaceMap::value_type & face, _faces) {
-        remaining_faces.insert(face.second);
+    std::deque<Vertex> cache;
+    // set of vertex_infos whose scores have to be updated in the next run
+    VertexList updated_vertices;
+    // for first run, all vertices need to be updated
+    for (Vertex vertex = 0; vertex < vertex_infos.size(); ++vertex) {
+        updated_vertices.push_back(vertex);
     };
-    // set of faces whose scores were updated in the previous run
-    std::set<MFacePtr> updated_faces;
-    // set of vertices whose scores were updated in the previous run
-    std::set<MVertexPtr> updated_vertices;
     // add faces by maximal score, updating the score as we go along
-    while (!remaining_faces.empty()) {
-        // find the best face, or a good approximation
-        MFacePtr best_face;
+    while (!faces.empty()) {
+        // calculate score of all vertex_infos from previous run
+        Faces updated_faces = update_score(updated_vertices, vertex_score);
+        // if scores of triangles were updated in the previous run
+        // then restrict the search to those
+        // this is suboptimal, but the difference is usually very
+        // small and it is *much* faster (as noted by Forsyth)
         if (updated_faces.empty()) {
             // very slow but correct global maximum
-            best_face = get_best_face(remaining_faces);
-        } else {
-            // if scores of triangles were updated in the previous run
-            // then restrict the search to those
-            // this is suboptimal, but the difference is usually very
-            // small and it is *much* faster (as noted by Forsyth)
-            best_face = get_best_face(updated_faces);
+            updated_faces = faces;
         };
-        // mark as added
-        remaining_faces.erase(best_face);
+        // find the best face, or a good approximation
+        Face best_face(erase_best_face(updated_faces));
         // append to ordered list of triangles
         cache_optimized_faces.push_back(best_face);
-        // clean lists of vertices and triangles whose score we will update
+        // clean lists of vertex_infos and triangles whose score we will update
         updated_vertices.clear();
-        updated_faces.clear();
         // for each vertex in the just added triangle
-        MVertexPtr best_verts[] = {best_face->mv0, best_face->mv1, best_face->mv2};
-        BOOST_FOREACH(MVertexPtr mvertex, best_verts) {
+        Vertex best_verts[] = {best_face.v0, best_face.v1, best_face.v2};
+        BOOST_FOREACH(Vertex const & vertex, best_verts) {
             // remove triangle from the triangle list of the vertex
-            mvertex->mfaces.erase(best_face);
+            vertex_infos[vertex].faces.erase(best_face);
             // must update its score
-            updated_vertices.insert(mvertex);
-            insert_faces(updated_faces, mvertex);
+            updated_vertices.push_back(vertex);
         };
-        // add each vertex to cache (score is updated later)
-        BOOST_FOREACH(MVertexPtr mvertex, best_verts) {
-            std::deque<MVertexPtr>::const_iterator it = std::find(cache.begin(), cache.end(), mvertex);
+        // add each vertex to cache, checking for cache overflows
+        BOOST_FOREACH(Vertex const & vertex, best_verts) {
+            std::deque<Vertex>::const_iterator it = std::find(
+                    cache.begin(), cache.end(), vertex);
             if (it == cache.end()) {
-                // mvertex not in cash already: add it
-                cache.push_front(mvertex);
+                // vertex not in cash already: add it
+                cache.push_front(vertex);
                 if (cache.size() > VCACHE_CACHE_SIZE) {
                     // cache overflow!
                     // remove last vertex from cache
-                    MVertexPtr removed_mvertex = cache.back();
+                    Vertex removed_vertex = cache.back();
                     cache.pop_back();
                     // update its cache position
-                    removed_mvertex->cache_position = -1;
+                    vertex_infos[removed_vertex].cache_position = -1;
                     // must update its score
-                    updated_vertices.insert(removed_mvertex);
-                    insert_faces(updated_faces, removed_mvertex);
-                }
+                    updated_vertices.push_back(removed_vertex);
+                };
             };
         };
         // for each vertex in the cache (this includes those from the
         // just added triangle)
         int cache_pos = 0;
-        BOOST_FOREACH(MVertexPtr mvertex, cache) {
+        BOOST_FOREACH(Vertex const & vertex, cache) {
             // update cache positions
-            mvertex->cache_position = cache_pos;
+            vertex_infos[vertex].cache_position = cache_pos;
             // must update its score
-            updated_vertices.insert(mvertex);
-            insert_faces(updated_faces, mvertex);
+            updated_vertices.push_back(vertex);
             ++cache_pos;
-        };
-        // update scores
-        BOOST_FOREACH(MVertexPtr mvertex, updated_vertices) {
-            mvertex->score =
-                vertex_score.get(
-                    mvertex->cache_position,
-                    mvertex->mfaces.size());
-        };
-        BOOST_FOREACH(MFacePtr mface, updated_faces) {
-            mface->score =
-                mface->mv0->score +
-                mface->mv1->score +
-                mface->mv2->score;
         };
     };
     // return result
