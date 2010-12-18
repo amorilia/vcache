@@ -63,11 +63,13 @@ for a detailed description and discussion of the algorithm.
 #include "vcache/vertex_score.hpp"
 #include "vcache/mesh.hpp"
 
+std::list<std::list<int> > get_cache_optimized_faces(std::list<std::list<int> > const & faces, VertexScore const & vertex_score=VertexScore());
+
 /*! Calculate number of transforms per vertex for a given cache size
  *  and triangles/strips. See
  *  http://castano.ludicon.com/blog/2009/01/29/acmr/
  */
-int average_transform_to_vertex_ratio(std::list<std::list<int> > faces, int cache_size=VCACHE_CACHE_SIZE);
+float get_average_transform_to_vertex_ratio(std::list<std::list<int> > faces, int cache_size=VCACHE_CACHE_SIZE);
 
 #endif
 

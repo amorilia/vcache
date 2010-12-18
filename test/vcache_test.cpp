@@ -118,4 +118,41 @@ BOOST_AUTO_TEST_CASE(vertex_score_test)
     BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
 }
 
+BOOST_AUTO_TEST_CASE(optimize_test_1)
+{
+    int raw_faces[][3] = {
+        {1, 5, 2},
+        {5, 2, 6},
+        {5, 9, 6},
+        {9, 6, 10},
+        {9, 13, 10},
+        {13, 10, 14},
+        {0, 4, 1},
+        {4, 1, 5},
+        {4, 8, 5},
+        {8, 5, 9},
+        {8, 12, 9},
+        {12, 9, 13},
+        {2, 6, 3},
+        {6, 3, 7},
+        {6, 10, 7},
+        {10, 7, 11},
+        {10, 14, 11},
+        {14, 11, 15}
+    };
+    VertexScore vertex_score;
+    std::list<std::list<int> > faces;
+    BOOST_FOREACH(int *raw_face, raw_faces) {
+        std::list<int> face;
+        face.push_back(raw_face[0]);
+        face.push_back(raw_face[1]);
+        face.push_back(raw_face[2]);
+        faces.push_back(face);
+    };
+    BOOST_CHECK_EQUAL(get_average_transform_to_vertex_ratio(faces, 8), 1.5f);
+    std::list<std::list<int> > opt_faces = get_cache_optimized_faces(faces);
+    BOOST_CHECK_EQUAL(faces.size(), opt_faces.size());
+    BOOST_CHECK_EQUAL(get_average_transform_to_vertex_ratio(opt_faces, 8), 1.0f);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

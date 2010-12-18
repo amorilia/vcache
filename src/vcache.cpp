@@ -40,7 +40,28 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "vcache.hpp"
 
-int average_transform_to_vertex_ratio(std::list<std::list<int> > faces, int cache_size)
+std::list<std::list<int> > get_cache_optimized_faces(std::list<std::list<int> > const & faces, VertexScore const & vertex_score)
+{
+    Mesh mesh;
+    BOOST_FOREACH(std::list<int> const & face, faces) {
+        std::list<int>::const_iterator iter = face.begin();
+        int v0 = *iter;
+        int v1 = *(++iter);
+        int v2 = *(++iter);
+        mesh.add_face(v0, v1, v2);
+    };
+    std::list<std::list<int> > result;
+    BOOST_FOREACH(MFacePtr const & mface, mesh.get_cache_optimized_faces(vertex_score)) {
+        std::list<int> face;
+        face.push_back(mface->mv0->vertex);
+        face.push_back(mface->mv1->vertex);
+        face.push_back(mface->mv2->vertex);
+        result.push_back(face);
+    };
+    return result;
+}
+
+float get_average_transform_to_vertex_ratio(std::list<std::list<int> > faces, int cache_size)
 {
     std::deque<int> cache;
     // get number of vertices
