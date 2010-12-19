@@ -16,6 +16,12 @@ include_directories(${Boost_INCLUDE_DIRS})
 # include headers
 include_directories(${VCACHE_SOURCE_DIR}/include)
 
+# to enable profiling, run cmake with -DPROFILE=1
+if(PROFILE)
+  add_definitions("-pg")
+  set(CMAKE_EXE_LINKER_FLAGS "-pg ${CMAKE_EXE_LINKER_FLAGS}")
+endif(PROFILE)
+
 # build the actual library
 add_library(vcache
     src/vcache/mesh.cpp
