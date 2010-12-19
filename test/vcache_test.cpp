@@ -204,6 +204,18 @@ BOOST_AUTO_TEST_CASE(optimize_test_grid_48x48)
     tvr = get_transform_to_vertex_ratio(opt_faces, 32);
     BOOST_CHECK_EQUAL(tvr.first, 3021);
     BOOST_CHECK_EQUAL(tvr.second, 2304);
+    tvr = get_transform_to_vertex_ratio(faces, 16);
+    BOOST_CHECK_EQUAL(tvr.first, 4305);
+    BOOST_CHECK_EQUAL(tvr.second, 2304);
+    tvr = get_transform_to_vertex_ratio(opt_faces, 16);
+    BOOST_CHECK_EQUAL(tvr.first, 3058);
+    BOOST_CHECK_EQUAL(tvr.second, 2304);
+    tvr = get_transform_to_vertex_ratio(faces, 8);
+    BOOST_CHECK_EQUAL(tvr.first, 4420);
+    BOOST_CHECK_EQUAL(tvr.second, 2304);
+    tvr = get_transform_to_vertex_ratio(opt_faces, 8);
+    BOOST_CHECK_EQUAL(tvr.first, 3362);
+    BOOST_CHECK_EQUAL(tvr.second, 2304);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
