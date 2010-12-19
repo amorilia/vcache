@@ -72,7 +72,7 @@ std::list<std::list<int> > get_cache_optimized_faces(std::list<std::list<int> > 
     return result;
 }
 
-float get_average_transform_to_vertex_ratio(std::list<std::list<int> > faces, int cache_size)
+std::pair<int, int> get_transform_to_vertex_ratio(std::list<std::list<int> > faces, int cache_size)
 {
     std::deque<int> cache;
     // get number of vertices
@@ -95,9 +95,5 @@ float get_average_transform_to_vertex_ratio(std::list<std::list<int> > faces, in
         };
     };
     // return result
-    if (vertices.empty()) {
-        return 1;
-    } else {
-        return num_misses / float(vertices.size());
-    };
+    return std::pair<int, int>(num_misses, vertices.size());
 }

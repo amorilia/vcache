@@ -2,7 +2,8 @@
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 
-#include <ostream>
+#include <iostream>
+#include <fstream>
 
 #include "vcache.hpp"
 #include "test_helpers.hpp"
@@ -141,31 +142,68 @@ BOOST_AUTO_TEST_CASE(optimize_test_1)
         {14, 11, 15}
     };
     int raw_opt_faces[18][3] = {
-        {1, 5, 2},
-        {5, 2, 6},
-        {5, 9, 6},
-        {9, 6, 10},
-        {9, 13, 10},
-        {13, 10, 14},
         {0, 4, 1},
-        {4, 1, 5},
+        {1, 5, 4},
+        {1, 5, 2},
         {4, 8, 5},
-        {8, 5, 9},
-        {8, 12, 9},
-        {12, 9, 13},
+        {2, 6, 5},
         {2, 6, 3},
-        {6, 3, 7},
+        {3, 7, 6},
+        {5, 9, 8},
+        {5, 9, 6},
+        {8, 12, 9},
+        {9, 13, 12},
         {6, 10, 7},
-        {10, 7, 11},
+        {6, 10, 9},
+        {9, 13, 10},
+        {7, 11, 10},
+        {10, 14, 13},
         {10, 14, 11},
-        {14, 11, 15}
+        {11, 15, 14}
     };
     VertexScore vertex_score;
     std::list<std::list<int> > faces = array_to_list<int, 18, 3>(raw_faces);
     std::list<std::list<int> > opt_faces = array_to_list<int, 18, 3>(raw_opt_faces);
-    BOOST_CHECK_EQUAL(get_average_transform_to_vertex_ratio(faces, 8), 1.5f);
-    BOOST_CHECK_EQUAL(get_average_transform_to_vertex_ratio(opt_faces, 8), 1.0f);
+    std::pair<int, int> tvr;
+    tvr = get_transform_to_vertex_ratio(faces, 8);
+    BOOST_CHECK_EQUAL(tvr.first, 24);
+    BOOST_CHECK_EQUAL(tvr.second, 16);
+    tvr = get_transform_to_vertex_ratio(opt_faces, 8);
+    BOOST_CHECK_EQUAL(tvr.first, 16);
+    BOOST_CHECK_EQUAL(tvr.second, 16);
     BOOST_CHECK_EQUAL(opt_faces, get_cache_optimized_faces(faces));
+}
+
+BOOST_AUTO_TEST_CASE(optimize_test_suzanne)
+{
+    VertexScore vertex_score;
+    std::ifstream stream(TEST_PATH "/obj/suzanne.obj");
+    std::list<std::list<int> > faces = obj_faces(stream);
+    //std::cout << faces << std::endl;
+    std::list<std::list<int> > opt_faces = get_cache_optimized_faces(faces);
+    std::pair<int, int> tvr;
+    tvr = get_transform_to_vertex_ratio(faces, 32);
+    BOOST_CHECK_EQUAL(tvr.first, 3092);
+    BOOST_CHECK_EQUAL(tvr.second, 2012);
+    tvr = get_transform_to_vertex_ratio(opt_faces, 32);
+    BOOST_CHECK_EQUAL(tvr.first, 2637);
+    BOOST_CHECK_EQUAL(tvr.second, 2012);
+}
+
+BOOST_AUTO_TEST_CASE(optimize_test_grid_48x48)
+{
+    VertexScore vertex_score;
+    std::ifstream stream(TEST_PATH "/obj/grid-48x48.obj");
+    std::list<std::list<int> > faces = obj_faces(stream);
+    //std::cout << faces << std::endl;
+    std::list<std::list<int> > opt_faces = get_cache_optimized_faces(faces);
+    std::pair<int, int> tvr;
+    tvr = get_transform_to_vertex_ratio(faces, 32);
+    BOOST_CHECK_EQUAL(tvr.first, 4052);
+    BOOST_CHECK_EQUAL(tvr.second, 2304);
+    tvr = get_transform_to_vertex_ratio(opt_faces, 32);
+    BOOST_CHECK_EQUAL(tvr.first, 3021);
+    BOOST_CHECK_EQUAL(tvr.second, 2304);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

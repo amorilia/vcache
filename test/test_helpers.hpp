@@ -4,8 +4,12 @@
 #include <iostream>
 #include <list>
 #include <set>
+#include <string>
 
 #include "vcache/mesh.hpp"
+
+#ifndef VCACHE_TEST_HELPERS_HPP_INCLUDED
+#define VCACHE_TEST_HELPERS_HPP_INCLUDED
 
 namespace std
 {
@@ -75,3 +79,8 @@ std::list<std::list<T> > array_to_list(T raw_data[n][m])
     };
     return data;
 }
+
+std::list<std::list<int> > obj_faces(std::istream & in);
+
+#endif
+

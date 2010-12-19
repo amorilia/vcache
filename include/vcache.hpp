@@ -69,7 +69,7 @@ std::list<std::list<int> > get_cache_optimized_faces(std::list<std::list<int> > 
  *  and triangles/strips. See
  *  http://castano.ludicon.com/blog/2009/01/29/acmr/
  */
-float get_average_transform_to_vertex_ratio(std::list<std::list<int> > faces, int cache_size=VCACHE_CACHE_SIZE);
+std::pair<int, int> get_transform_to_vertex_ratio(std::list<std::list<int> > faces, int cache_size=VCACHE_CACHE_SIZE);
 
 #endif
 

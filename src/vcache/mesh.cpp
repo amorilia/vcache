@@ -35,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#define DEBUG
+//#define DEBUG
 
 #include <algorithm> // std::find
 #include <boost/foreach.hpp> // BOOST_FOREACH
