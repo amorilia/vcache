@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(vertex_score_test)
     BOOST_CHECK_EQUAL(vertex_score.get(cache_position, valence), 898);
 }
 
-BOOST_AUTO_TEST_CASE(optimize_test_1)
+BOOST_AUTO_TEST_CASE(optimize_test_simple)
 {
     std::size_t raw_faces[18][3] = {
         {1, 5, 2},

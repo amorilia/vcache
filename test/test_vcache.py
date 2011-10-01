@@ -1,7 +1,13 @@
 import nose.tools
 import vcache
 
-def test_optimize_1():
+def get_obj_faces(filename):
+    with open(filename, "rt") as stream:
+        for line in stream:
+            if line.startswith('f'):
+                yield [int(index) for index in line[2:].split()]
+
+def test_optimize_simple():
     faces = [
         [1, 5, 2],
         [5, 2, 6],
@@ -48,3 +54,34 @@ def test_optimize_1():
     nose.tools.assert_equal(tvr, (16, 16));
     nose.tools.assert_equal(opt_faces, vcache.get_cache_optimized_faces(faces))
 
+def test_optimize_suzanne():
+    faces = list(get_obj_faces("test/obj/suzanne.obj"))
+    opt_faces = vcache.get_cache_optimized_faces(faces)
+    nose.tools.assert_equal(
+        vcache.get_transform_to_vertex_ratio(faces, 32),
+        (3092, 2012))
+    nose.tools.assert_equal(
+        vcache.get_transform_to_vertex_ratio(opt_faces, 32),
+        (2637, 2012))
+
+def test_optimize_grid_48x48():
+    faces = list(get_obj_faces("test/obj/grid-48x48.obj"))
+    opt_faces = vcache.get_cache_optimized_faces(faces)
+    nose.tools.assert_equal(
+        vcache.get_transform_to_vertex_ratio(faces, 32),
+        (4052, 2304))
+    nose.tools.assert_equal(
+        vcache.get_transform_to_vertex_ratio(opt_faces, 32),
+        (3021, 2304))
+    nose.tools.assert_equal(
+        vcache.get_transform_to_vertex_ratio(faces, 16),
+        (4305, 2304))
+    nose.tools.assert_equal(
+        vcache.get_transform_to_vertex_ratio(opt_faces, 16),
+        (3058, 2304))
+    nose.tools.assert_equal(
+        vcache.get_transform_to_vertex_ratio(faces, 8),
+        (4420, 2304))
+    nose.tools.assert_equal(
+        vcache.get_transform_to_vertex_ratio(opt_faces, 8),
+        (3362, 2304))
