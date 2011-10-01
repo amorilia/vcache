@@ -63,6 +63,8 @@ for a detailed description and discussion of the algorithm.
 #include "vcache/vertex_score.hpp"
 #include "vcache/mesh.hpp"
 
+/*! Optimize list of faces to minimize cache misses.
+ */
 std::list<std::list<std::size_t> > get_cache_optimized_faces(std::list<std::list<std::size_t> > const & faces, VertexScore const & vertex_score=VertexScore());
 
 /*! Calculate number of transforms per vertex for a given cache size

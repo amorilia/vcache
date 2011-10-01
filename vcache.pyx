@@ -38,9 +38,12 @@
 # ***** END LICENSE BLOCK *****
 
 from libcpp.list cimport list as list_
+from libcpp.pair cimport pair
 
 cdef extern from "vcache.hpp":
+    enum: VCACHE_CACHE_SIZE 
     list_[list_[size_t]] c_get_cache_optimized_faces "get_cache_optimized_faces" (list_[list_[size_t]] faces)
+    pair[size_t, size_t] c_get_transform_to_vertex_ratio "get_transform_to_vertex_ratio" (list_[list_[size_t]] faces, size_t cache_size)
 
 def get_cache_optimized_faces(faces):
     """Optimize list of faces to minimize cache misses."""
@@ -69,3 +72,20 @@ def get_cache_optimized_faces(faces):
             c_face.pop_front()
         opt_faces.append(face)
     return opt_faces
+
+def get_transform_to_vertex_ratio(faces, cache_size=VCACHE_CACHE_SIZE):
+    """Calculate number of transforms per vertex for a given cache
+    size and triangles/strips.
+    """
+    # convert faces to list of list of size_t's
+    cdef list_[size_t] c_face
+    cdef list_[list_[size_t]] c_faces
+    for face in faces:
+        c_face.clear()
+        for vertex in face:
+            c_face.push_back(vertex)
+        c_faces.push_back(c_face)
+    # get tvr
+    cdef pair[size_t, size_t] c_tvr
+    c_tvr = c_get_transform_to_vertex_ratio(c_faces, cache_size)
+    return c_tvr.first, c_tvr.second
