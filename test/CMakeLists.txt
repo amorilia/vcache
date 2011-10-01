@@ -1,5 +1,5 @@
 add_definitions(-DTEST_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
-foreach(TEST mesh_test vcache_test)
+foreach(TEST test_mesh test_vcache)
   add_executable(${TEST} ${TEST}.cpp test_helpers.cpp)
   target_link_libraries (${TEST} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} vcache)
   add_test(${TEST} ${TEST})
