@@ -153,8 +153,8 @@ Face Mesh::erase_best_face(Faces const & updated_faces)
     std::cout << "****** begin erase_best_face ******" << std::endl;
 #endif
     int best_score = -1000 * VCACHE_PRECISION; // minus infinity
-    Faces::iterator best_face = updated_faces.end();
-    for (Faces::iterator face = updated_faces.begin(); face != updated_faces.end(); ++face) {
+    Faces::const_iterator best_face = updated_faces.end();
+    for (Faces::const_iterator face = updated_faces.begin(); face != updated_faces.end(); ++face) {
         int face_score =
             vertex_infos[face->v0].score +
             vertex_infos[face->v1].score +
