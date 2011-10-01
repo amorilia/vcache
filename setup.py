@@ -16,6 +16,7 @@ Operating System :: OS Independent"""
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
+import sys
 
 readme = open("README.rst").read().split("\n")
 
@@ -38,6 +39,7 @@ setup(
                  "include/vcache/mesh.hpp",
                  "include/vcache/vertex_score.hpp",
                  ],
+            extra_compile_args = ['/EHsc'] if sys.platform == "win32" else [],
             )
         ],
     author="Amorilia",
