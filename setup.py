@@ -1,4 +1,4 @@
-"""Setup script for pyvcache."""
+"""Setup script for vcache."""
 
 classifiers = """\
 Development Status :: 4 - Beta
