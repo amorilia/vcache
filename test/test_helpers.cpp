@@ -5,7 +5,7 @@
 namespace qi = boost::spirit::qi;
 
 // very simple obj file reader (no normals, no texture coordinates)
-std::list<std::list<int> > obj_faces(std::istream & in)
+std::list<std::list<std::size_t> > obj_faces(std::istream & in)
 {
     // disable skipping of whitespace
     in.unsetf(std::ios::skipws);
@@ -15,7 +15,7 @@ std::list<std::list<int> > obj_faces(std::istream & in)
     boost::spirit::istream_iterator last;
 
     // use iterator to parse stream
-    std::list<std::list<int> > result;
+    std::list<std::list<std::size_t> > result;
     bool r =
         qi::phrase_parse(
             first, last,

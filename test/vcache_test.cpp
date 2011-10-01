@@ -12,11 +12,11 @@ BOOST_AUTO_TEST_SUITE(vcache_test_suite)
 
 BOOST_AUTO_TEST_CASE(vertex_score_test)
 {
-    int cache_position;
-    int valence;
+    std::size_t cache_position;
+    std::size_t valence;
     VertexScore vertex_score(1.5, 0.75, 2.0, 0.5);
     // usual cases
-    cache_position = -1;
+    cache_position = VCACHE_CACHE_SIZE; // this value means not in cache
     valence = 0;
     BOOST_CHECK_EQUAL(vertex_score.get(cache_position, valence), -1000);
     valence = 1;
@@ -93,35 +93,11 @@ BOOST_AUTO_TEST_CASE(vertex_score_test)
     BOOST_CHECK_EQUAL(vertex_score.get(cache_position, valence), 949);
     cache_position = 5;
     BOOST_CHECK_EQUAL(vertex_score.get(cache_position, valence), 898);
-    // corner cases: negative valence value
-    valence = -1;
-    cache_position = 0;
-    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
-    cache_position = 1;
-    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
-    cache_position = 2;
-    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
-    cache_position = 3;
-    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
-    cache_position = 4;
-    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
-    cache_position = 5;
-    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
-    // corner cases: cache position exceeds modelled cache
-    cache_position = VCACHE_CACHE_SIZE;
-    valence = 0;
-    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
-    valence = 1;
-    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
-    valence = 2;
-    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
-    valence = 3;
-    BOOST_CHECK_THROW(vertex_score.get(cache_position, valence), std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(optimize_test_1)
 {
-    int raw_faces[18][3] = {
+    std::size_t raw_faces[18][3] = {
         {1, 5, 2},
         {5, 2, 6},
         {5, 9, 6},
@@ -141,7 +117,7 @@ BOOST_AUTO_TEST_CASE(optimize_test_1)
         {10, 14, 11},
         {14, 11, 15}
     };
-    int raw_opt_faces[18][3] = {
+    std::size_t raw_opt_faces[18][3] = {
         {0, 4, 1},
         {1, 5, 4},
         {1, 5, 2},
@@ -162,9 +138,9 @@ BOOST_AUTO_TEST_CASE(optimize_test_1)
         {11, 15, 14}
     };
     VertexScore vertex_score;
-    std::list<std::list<int> > faces = array_to_list<int, 18, 3>(raw_faces);
-    std::list<std::list<int> > opt_faces = array_to_list<int, 18, 3>(raw_opt_faces);
-    std::pair<int, int> tvr;
+    std::list<std::list<std::size_t> > faces = array_to_list<std::size_t, 18, 3>(raw_faces);
+    std::list<std::list<std::size_t> > opt_faces = array_to_list<std::size_t, 18, 3>(raw_opt_faces);
+    std::pair<std::size_t, std::size_t> tvr;
     tvr = get_transform_to_vertex_ratio(faces, 8);
     BOOST_CHECK_EQUAL(tvr.first, 24);
     BOOST_CHECK_EQUAL(tvr.second, 16);
@@ -178,10 +154,10 @@ BOOST_AUTO_TEST_CASE(optimize_test_suzanne)
 {
     VertexScore vertex_score;
     std::ifstream stream(TEST_PATH "/obj/suzanne.obj");
-    std::list<std::list<int> > faces = obj_faces(stream);
+    std::list<std::list<std::size_t> > faces = obj_faces(stream);
     //std::cout << faces << std::endl;
-    std::list<std::list<int> > opt_faces = get_cache_optimized_faces(faces);
-    std::pair<int, int> tvr;
+    std::list<std::list<std::size_t> > opt_faces = get_cache_optimized_faces(faces);
+    std::pair<std::size_t, std::size_t> tvr;
     tvr = get_transform_to_vertex_ratio(faces, 32);
     BOOST_CHECK_EQUAL(tvr.first, 3092);
     BOOST_CHECK_EQUAL(tvr.second, 2012);
@@ -194,10 +170,10 @@ BOOST_AUTO_TEST_CASE(optimize_test_grid_48x48)
 {
     VertexScore vertex_score;
     std::ifstream stream(TEST_PATH "/obj/grid-48x48.obj");
-    std::list<std::list<int> > faces = obj_faces(stream);
+    std::list<std::list<std::size_t> > faces = obj_faces(stream);
     //std::cout << faces << std::endl;
-    std::list<std::list<int> > opt_faces = get_cache_optimized_faces(faces);
-    std::pair<int, int> tvr;
+    std::list<std::list<std::size_t> > opt_faces = get_cache_optimized_faces(faces);
+    std::pair<std::size_t, std::size_t> tvr;
     tvr = get_transform_to_vertex_ratio(faces, 32);
     BOOST_CHECK_EQUAL(tvr.first, 4052);
     BOOST_CHECK_EQUAL(tvr.second, 2304);
