@@ -45,9 +45,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "vcache/vertex_score.hpp"
 
-//! Vertex representation.
-typedef size_t Vertex;
-
 // forward declarations
 class VertexInfo;
 class Face;
@@ -62,7 +59,7 @@ class VertexInfo
 {
 public:
     //! Position of the vertex in the cache.
-    int cache_position;
+    std::size_t cache_position;
     //! Only faces that have *not* yet been drawn are in this list
     //! Note: faces are set in Mesh::add_face.
     std::set<Face> faces;
@@ -82,17 +79,17 @@ class Face
 {
 public:
     //! Note: don't call directly! Use Mesh::add_face.
-    Face(Vertex _v0, Vertex _v1, Vertex _v2);
+    Face(std::size_t _v0, std::size_t _v1, std::size_t _v2);
     //! Strict inequality by vertex index.
     bool operator<(Face const & other) const;
     //! Equality by vertex index.
     bool operator==(Face const & other) const;
     //! First Vertex.
-    Vertex const v0;
+    std::size_t const v0;
     //! Second Vertex.
-    Vertex const v1;
+    std::size_t const v1;
     //! Third Vertex.
-    Vertex const v2;
+    std::size_t const v2;
 };
 
 //! A mesh built from faces.
@@ -105,7 +102,7 @@ public:
     // calculated on the fly).
     typedef std::set<Face> Faces;
     // List of vertices. Used to update score of parts of the mesh.
-    typedef std::list<Vertex> VertexList;
+    typedef std::list<std::size_t> VertexList;
 
     //! Faces of the mesh.
     Faces faces;
@@ -114,10 +111,10 @@ public:
     VertexInfos vertex_infos;
 
     //! Initialize empty mesh.
-    Mesh(Vertex num_vertices);
+    Mesh(std::size_t num_vertices);
 
     //! Create new face for mesh, or return existing face.
-    Face const & add_face(Vertex v0, Vertex v1, Vertex v2);
+    Face const & add_face(std::size_t v0, std::size_t v1, std::size_t v2);
 
     //! Update score of given vertices, and return set of affected faces.
     Faces update_score(

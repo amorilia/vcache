@@ -100,7 +100,7 @@ public:
       finally multiplied by VCACHE_PRECISION (which is 1000 by
       default), and rounded to the nearest integer.
     */
-    int get(int cache_position, int valence) const;
+    int get(std::size_t cache_position, std::size_t valence) const;
 };
 
 #endif

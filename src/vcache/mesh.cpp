@@ -74,10 +74,11 @@ std::ostream & operator<<(std::ostream & stream, Mesh const & mesh)
     BOOST_FOREACH(VertexInfo const & vertex_info, mesh.vertex_infos) {
         stream << vertex_info << std::endl;
     };
+    return stream;
 }
 
 VertexInfo::VertexInfo()
-    : cache_position(-1), score(-VCACHE_PRECISION), faces()
+    : cache_position(VCACHE_CACHE_SIZE), faces(), score(-VCACHE_PRECISION)
 {
     // nothing to do: faces are set in Mesh::add_face.
 };
@@ -87,7 +88,7 @@ void VertexInfo::update_score(VertexScore const & vertex_score)
     score = vertex_score.get(cache_position, faces.size());
 };
 
-Face::Face(Vertex v0, Vertex v1, Vertex v2)
+Face::Face(std::size_t v0, std::size_t v1, std::size_t v2)
     : v0((v0 < v1 && v0 < v2)?v0:((v1 < v0 && v1 < v2)?v1:v2)),
       v1((v0 < v1 && v0 < v2)?v1:((v1 < v0 && v1 < v2)?v2:v0)),
       v2((v0 < v1 && v0 < v2)?v2:((v1 < v0 && v1 < v2)?v0:v1))
@@ -112,9 +113,9 @@ bool Face::operator==(const Face & otherface) const
     return ((v0 == otherface.v0) && (v1 == otherface.v1) && (v2 == otherface.v2));
 };
 
-Mesh::Mesh(Vertex num_vertices) : faces(), vertex_infos(num_vertices) {};
+Mesh::Mesh(std::size_t num_vertices) : faces(), vertex_infos(num_vertices) {};
 
-Face const & Mesh::add_face(Vertex v0, Vertex v1, Vertex v2)
+Face const & Mesh::add_face(std::size_t v0, std::size_t v1, std::size_t v2)
 {
     // set::insert inserts a new element or returns existing element
     std::pair<Faces::iterator, bool> result = faces.insert(Face(v0, v1, v2));
@@ -133,7 +134,7 @@ std::set<Face> Mesh::update_score(
 {
     std::set<Face> updated_faces;
     // update score of all vertex_infos and keep track of faces that contain them
-    BOOST_FOREACH(Vertex vertex, vertices) {
+    BOOST_FOREACH(std::size_t vertex, vertices) {
         VertexInfo & vertex_info = vertex_infos[vertex];
         vertex_info.update_score(vertex_score);
         updated_faces.insert(
@@ -179,11 +180,11 @@ std::list<Face> Mesh::get_cache_optimized_faces(VertexScore const & vertex_score
     // result
     std::list<Face> cache_optimized_faces;
     // emulated cache
-    std::deque<Vertex> cache;
+    std::deque<std::size_t> cache;
     // set of vertex_infos whose scores have to be updated in the next run
     VertexList updated_vertices;
     // for first run, all vertices need to be updated
-    for (Vertex vertex = 0; vertex < vertex_infos.size(); ++vertex) {
+    for (std::size_t vertex = 0; vertex < vertex_infos.size(); ++vertex) {
         updated_vertices.push_back(vertex);
     };
     // add faces by maximal score, updating the score as we go along
@@ -205,27 +206,27 @@ std::list<Face> Mesh::get_cache_optimized_faces(VertexScore const & vertex_score
         // clean lists of vertex_infos and triangles whose score we will update
         updated_vertices.clear();
         // for each vertex in the just added triangle
-        Vertex best_verts[] = {best_face.v0, best_face.v1, best_face.v2};
-        BOOST_FOREACH(Vertex const & vertex, best_verts) {
+        std::size_t best_verts[] = {best_face.v0, best_face.v1, best_face.v2};
+        BOOST_FOREACH(std::size_t const & vertex, best_verts) {
             // remove triangle from the triangle list of the vertex
             vertex_infos[vertex].faces.erase(best_face);
             // must update its score
             updated_vertices.push_back(vertex);
         };
         // add each vertex to cache, checking for cache overflows
-        BOOST_FOREACH(Vertex const & vertex, best_verts) {
-            std::deque<Vertex>::const_iterator it = std::find(
-                    cache.begin(), cache.end(), vertex);
+        BOOST_FOREACH(std::size_t const & vertex, best_verts) {
+            std::deque<std::size_t>::const_iterator it = std::find(
+                        cache.begin(), cache.end(), vertex);
             if (it == cache.end()) {
                 // vertex not in cash already: add it
                 cache.push_front(vertex);
                 if (cache.size() > VCACHE_CACHE_SIZE) {
                     // cache overflow!
                     // remove last vertex from cache
-                    Vertex removed_vertex = cache.back();
+                    std::size_t removed_vertex = cache.back();
                     cache.pop_back();
                     // update its cache position
-                    vertex_infos[removed_vertex].cache_position = -1;
+                    vertex_infos[removed_vertex].cache_position = VCACHE_CACHE_SIZE;
                     // must update its score
                     updated_vertices.push_back(removed_vertex);
                 };
@@ -233,8 +234,8 @@ std::list<Face> Mesh::get_cache_optimized_faces(VertexScore const & vertex_score
         };
         // for each vertex in the cache (this includes those from the
         // just added triangle)
-        int cache_pos = 0;
-        BOOST_FOREACH(Vertex const & vertex, cache) {
+        std::size_t cache_pos = 0;
+        BOOST_FOREACH(std::size_t const & vertex, cache) {
             // update cache positions
             vertex_infos[vertex].cache_position = cache_pos;
             // must update its score

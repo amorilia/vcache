@@ -48,7 +48,7 @@ VertexScore::VertexScore(
     : CACHE_SCORE(),
       VALENCE_SCORE()
 {
-    for (int cache_position = 0; cache_position < VCACHE_CACHE_SIZE; cache_position++) {
+    for (std::size_t cache_position = 0; cache_position < VCACHE_CACHE_SIZE; cache_position++) {
         if (cache_position < 3) {
             CACHE_SCORE[cache_position] =
                 0.5 + VCACHE_PRECISION * last_tri_score;
@@ -59,7 +59,7 @@ VertexScore::VertexScore(
                     cache_decay_power);
         };
     };
-    for (int valence = 0; valence < VCACHE_VALENCE_SIZE; valence++) {
+    for (std::size_t valence = 0; valence < VCACHE_VALENCE_SIZE; valence++) {
         if (valence == 0) {
             VALENCE_SCORE[valence] = 0;
         } else {
@@ -70,21 +70,13 @@ VertexScore::VertexScore(
     };
 };
 
-int VertexScore::get(int cache_position, int valence) const
+int VertexScore::get(std::size_t cache_position, std::size_t valence) const
 {
-    // validate arguments
-    if (cache_position >= VCACHE_CACHE_SIZE) {
-        throw std::runtime_error("cache position exceeds cache size");
-    };
-    if (valence < 0) {
-        throw std::runtime_error("negative valence");
-    };
-    // calculate score
     if (valence == 0) {
         // no triangle needs this vertex
         return -VCACHE_PRECISION;
     } else {
-        if (cache_position < 0) {
+        if (cache_position >= VCACHE_CACHE_SIZE) {
             // not in cache, so only valence score
             return VALENCE_SCORE[valence];
         } else if (valence >= VCACHE_VALENCE_SIZE) {
