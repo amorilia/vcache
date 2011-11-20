@@ -39,6 +39,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include <algorithm> // std::find
 #include <boost/foreach.hpp> // BOOST_FOREACH
+#include <boost/typeof/typeof.hpp> // BOOST_AUTO
 #include <deque>
 #include <stdexcept>
 
@@ -118,7 +119,7 @@ Mesh::Mesh(std::size_t num_vertices) : faces(), vertex_infos(num_vertices) {};
 Face const & Mesh::add_face(std::size_t v0, std::size_t v1, std::size_t v2)
 {
     // set::insert inserts a new element or returns existing element
-    std::pair<Faces::iterator, bool> result = faces.insert(Face(v0, v1, v2));
+    BOOST_AUTO(result, faces.insert(Face(v0, v1, v2)));
     if (result.second) {
         // face did not yet exist
         // so update links between faces and vertex_infos
@@ -153,8 +154,8 @@ Face Mesh::erase_best_face(Faces const & updated_faces)
     std::cout << "****** begin erase_best_face ******" << std::endl;
 #endif
     int best_score = -1000 * VCACHE_PRECISION; // minus infinity
-    Faces::const_iterator best_face = updated_faces.end();
-    for (Faces::const_iterator face = updated_faces.begin(); face != updated_faces.end(); ++face) {
+    BOOST_AUTO(best_face, updated_faces.end());
+    for (BOOST_AUTO(face, updated_faces.begin()); face != updated_faces.end(); ++face) {
         int face_score =
             vertex_infos[face->v0].score +
             vertex_infos[face->v1].score +
@@ -215,8 +216,8 @@ std::list<Face> Mesh::get_cache_optimized_faces(VertexScore const & vertex_score
         };
         // add each vertex to cache, checking for cache overflows
         BOOST_FOREACH(std::size_t const & vertex, best_verts) {
-            std::deque<std::size_t>::const_iterator it = std::find(
-                        cache.begin(), cache.end(), vertex);
+            BOOST_AUTO(
+                it, std::find(cache.begin(), cache.end(), vertex));
             if (it == cache.end()) {
                 // vertex not in cash already: add it
                 cache.push_front(vertex);
